@@ -60,3 +60,28 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
         logging.info(
             f'Scraped new data from {cls.SOURCE_NAME}, on {datetime_now}.')
         return data
+
+
+class MockResponse:
+    @staticmethod
+    def json():
+        return {"mock_key": "mock_response"}
+
+
+class TestNoFluffJobsPostingsDataSource:
+    def test_returns_correct_metadata_source_name(self, mocker):
+        mocker.patch('requests.get', return_value=MockResponse())
+        results = NoFluffJobsPostingsDataSource.get()
+        source_name = results.metadata.source_name
+        assert source_name == NoFluffJobsPostingsDataSource.SOURCE_NAME
+
+    def test_returns_correct_metadata_datetime(self, mocker):
+        expected = datetime.datetime(2021, 12, 1, 8, 30, 5)
+        datetime_mock = mocker.patch('datetime.datetime')
+        datetime_mock.now.return_value = expected
+
+        mocker.patch('requests.get', return_value=MockResponse())
+
+        results = NoFluffJobsPostingsDataSource.get()
+        obtained_datetime = results.metadata.obtained_datetime
+        assert obtained_datetime == expected
