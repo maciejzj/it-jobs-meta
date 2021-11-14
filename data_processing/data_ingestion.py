@@ -96,7 +96,8 @@ if __name__ == '__main__':
 class MockResponse:
     @staticmethod
     def json():
-        return {"mock_key": "mock_response"}
+        return {'postings': 'mock_postings_list',
+                'totalCount': 'mock_total_count'}
 
 
 class TestNoFluffJobsPostingsDataSource:
@@ -129,6 +130,17 @@ def test_make_data_key_returns_correct_key(mocker):
     data = NoFluffJobsPostingsDataSource.get()
     result = make_data_key(data)
     assert result == expected
+
+
+def test_make_json_string_returns_json_with_correct_structure(mocker):
+    mocker.patch('requests.get', return_value=MockResponse())
+
+    data = NoFluffJobsPostingsDataSource.get()
+    result = make_json_string(data)
+    result_back_to_json_dict = json.loads(result)
+
+    assert 'metadata' in result_back_to_json_dict.keys()
+    assert 'data' in result_back_to_json_dict.keys()
 
 
 def test_make_json_string_returns_correct_metadata(mocker):
