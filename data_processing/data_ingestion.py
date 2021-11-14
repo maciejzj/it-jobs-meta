@@ -38,8 +38,8 @@ class DataLake(ABC):
         pass
 
 
-def make_key_for_data(dataset: PostingsData) -> str:
-    timestamp = dataset.metadata.obtained_datetime.timestamp()
+def make_data_key(dataset: PostingsData) -> str:
+    timestamp = int(dataset.metadata.obtained_datetime.timestamp())
     source_name = dataset.metadata.source_name
     return f'{timestamp}_{source_name}'
 
@@ -86,7 +86,7 @@ class RedisDataLake(DataLake):
 def main():
     data = NoFluffJobsPostingsDataSource.get()
     data_lake = RedisDataLake('0.0.0.0', 6379, 0)
-    data_lake.set(make_key_for_data(data), make_json_string(data))
+    data_lake.set(make_data_key(data), make_json_string(data))
 
 
 if __name__ == '__main__':
@@ -116,3 +116,32 @@ class TestNoFluffJobsPostingsDataSource:
         results = NoFluffJobsPostingsDataSource.get()
         obtained_datetime = results.metadata.obtained_datetime
         assert obtained_datetime == expected
+
+
+def test_make_data_key_returns_correct_key(mocker):
+    datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
+    expected = '1638343805_nofluffjobs'
+    datetime_mock = mocker.patch('datetime.datetime')
+    datetime_mock.now.return_value = datetime_
+
+    mocker.patch('requests.get', return_value=MockResponse())
+
+    data = NoFluffJobsPostingsDataSource.get()
+    result = make_data_key(data)
+    assert result == expected
+
+
+def test_make_json_string_returns_correct_metadata(mocker):
+    datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
+    expected_json_metatada_str = {
+        'source_name': 'nofluffjobs',
+        'obtained_datetime': '2021-12-01 08:30:05'}
+    datetime_mock = mocker.patch('datetime.datetime')
+    datetime_mock.now.return_value = datetime_
+
+    mocker.patch('requests.get', return_value=MockResponse())
+
+    data = NoFluffJobsPostingsDataSource.get()
+    result = make_json_string(data)
+    result_back_to_json_dict = json.loads(result)
+    assert result_back_to_json_dict['metadata'] == expected_json_metatada_str
