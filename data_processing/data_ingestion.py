@@ -79,8 +79,8 @@ class RedisDataLake(DataLake):
     def set(self, key: str, data: str):
         self._db.set(key, data)
 
-    def get(self, key: str) -> str:
-        return self._get(key)
+    def get(self, key: str) -> dict[str, Any]:
+        return json.loads(self._db.get(key))
 
 
 def main():
