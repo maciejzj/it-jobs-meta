@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
 from typing import Any, Dict
 
 import pandas as pd
@@ -53,6 +54,7 @@ class DataWarehouseETL(ABC):
 
     def run_etl(self):
         self.drop_unwanted()
+        self.drop_duplicates()
         self.replace_values()
         self.extract_remote()
         self.extract_locations()
@@ -100,17 +102,36 @@ class DataWarehouseETL(ABC):
         pass
 
 
+@dataclass
+class DataWarehouseDbConfig:
+    protocol_name: str
+    user_name: str
+    password: str
+    host_address: str
+    db_name: str
+
+
+def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
+    ret = (f'{config.protocol_name}://{config.user_name}:{config.password}'
+           f'@{config.host_address}/{config.db_name}')
+    return ret
+
+
 class PandasDataWarehouseETL(DataWarehouseETL):
-    def __init__(self, postings_data_dict: Dict[str, Any]):
+    def __init__(self,
+                 postings_data_dict: Dict[str, Any],
+                 db_config: DataWarehouseDbConfig):
         self._df = pd.DataFrame.from_dict(
             postings_data_dict['data']['postings'])
         self._df.set_index('id', inplace=True)
-        print(len(self._df))
-        print(self._df.index.duplicated().sum())
         self._geolocator = Geolocator()
+        self._db_con = db.create_engine(make_db_uri_from_config(db_config))
 
     def drop_unwanted(self):
         self._df.drop(columns=DataWarehouseETL.TO_DROP, inplace=True)
+
+    def drop_duplicates(self):
+        self._df.drop_duplicates(subset='index', inplace=True)
 
     def replace_values(self):
         self._df.replace(to_replace=DataWarehouseETL.TO_REPLACE, inplace=True)
@@ -141,7 +162,6 @@ class PandasDataWarehouseETL(DataWarehouseETL):
 
     def get_postings_table(self):
         postings_df = self._df[DataWarehouseETL.POSTINGS_TABLE_COLS]
-        # postings_df.drop_duplicates(subset='index', inplace=True)
         return postings_df
 
     def get_seniority_table(self):
@@ -158,22 +178,13 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         return locations_df
 
     def load_postings_table_to_db(self):
-        SQLALCHEMY_DATABASE_URI = \
-            f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@0.0.0.0/{MYSQL_DATABASE}'
-        engine = db.create_engine(SQLALCHEMY_DATABASE_URI)
         postings_df = self.get_postings_table()
-        postings_df.to_sql('postings', con=engine, if_exists='replace')
+        postings_df.to_sql('postings', con=self._db_con, if_exists='replace')
 
     def load_seniority_table_to_db(self):
-        SQLALCHEMY_DATABASE_URI = \
-            f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@0.0.0.0/{MYSQL_DATABASE}'
-        engine = db.create_engine(SQLALCHEMY_DATABASE_URI)
         seniority_df = self.get_seniority_table()
-        seniority_df.to_sql('seniority', con=engine, if_exists='replace')
+        seniority_df.to_sql('seniority', con=self._db_con, if_exists='replace')
 
     def load_location_table_to_db(self):
-        SQLALCHEMY_DATABASE_URI = \
-            f'mysql+pymysql://{MYSQL_USER}:{MYSQL_PASSWORD}@0.0.0.0/{MYSQL_DATABASE}'
-        engine = db.create_engine(SQLALCHEMY_DATABASE_URI)
         location_df = self.get_location_table()
-        location_df.to_sql('location', con=engine, if_exists='replace')
+        location_df.to_sql('location', con=self._db_con, if_exists='replace')

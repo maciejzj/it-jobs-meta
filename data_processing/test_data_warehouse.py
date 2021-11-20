@@ -2,7 +2,9 @@ import math
 
 import pytest
 
-from data_warehouse import DataWarehouseETL, PandasDataWarehouseETL
+from data_warehouse import (DataWarehouseDbConfig,
+                            DataWarehouseETL,
+                            PandasDataWarehouseETL)
 
 POSTINGS_LIST_MOCK = [{
     'id': 'ELGZSKOL',
@@ -61,10 +63,18 @@ POSTINGS_DATA_DICT_MOCK = {
     'data': POSTINGS_RESPONSE_JSON_DICT_MOCK
 }
 
+DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
+    protocol_name='mysql+pymysql',
+    user_name='it_jobs_meta_worker',
+    password='roottmppass',
+    host_address='0.0.0.0',
+    db_name='it_jobs_meta_datawarehouse')
+
 
 class TestHappyPathPandasDataWarehouseETL:
     def setup_method(self):
-        self.etl = PandasDataWarehouseETL(POSTINGS_DATA_DICT_MOCK)
+        self.etl = PandasDataWarehouseETL(
+            POSTINGS_DATA_DICT_MOCK, DATA_WAREHOUSE_DB_CONFIG_MOCK)
 
     def test_drops_unwanted_cols_correctly(self):
         self.etl.drop_unwanted()
