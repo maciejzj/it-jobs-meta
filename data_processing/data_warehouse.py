@@ -1,18 +1,14 @@
+import logging
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict
 from pathlib import Path
+from typing import Any, Dict
 
 import pandas as pd
 import sqlalchemy as db
 import yaml
 
 from geolocator import Geolocator
-
-MYSQL_ROOT_PASSWORD = 'roottmppass'
-MYSQL_DATABASE = 'it_jobs_meta_datawarehouse'
-MYSQL_USER = 'it_jobs_meta_worker'
-MYSQL_PASSWORD = 'tmppass'
 
 
 class DataWarehouseETL(ABC):
