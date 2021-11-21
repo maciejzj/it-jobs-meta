@@ -7,7 +7,6 @@ import pandas as pd
 import sqlalchemy as db
 import yaml
 
-from data_ingestion import DataLake
 from geolocator import Geolocator
 
 MYSQL_ROOT_PASSWORD = 'roottmppass'
@@ -102,11 +101,11 @@ class DataWarehouseETL(ABC):
         pass
 
     @abstractmethod
-    def get_seniority_table():
+    def get_locations_table():
         pass
 
     @abstractmethod
-    def get_location_table():
+    def get_seniorities_table():
         pass
 
 
@@ -182,18 +181,18 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         salaries_df = self._df[DataWarehouseETL.SALARIES_TABLE_COLS]
         return salaries_df
 
-    def get_seniority_table(self):
-        seniority_df = self._df.explode('seniority')
-        seniority_df = seniority_df[DataWarehouseETL.SENIORITY_TABLE_COLS]
-        return seniority_df
-
-    def get_location_table(self):
+    def get_locations_table(self):
         locations_df = self._df.explode('city')
         locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
             lambda city: pd.Series([city[0], city[1], city[2]]))
         locations_df = locations_df[DataWarehouseETL.LOCATIONS_TABLE_COLS]
         locations_df.dropna(inplace=True)
         return locations_df
+
+    def get_seniorities_table(self):
+        seniority_df = self._df.explode('seniority')
+        seniority_df = seniority_df[DataWarehouseETL.SENIORITY_TABLE_COLS]
+        return seniority_df
 
     def load_postings_table_to_db(self):
         postings_df = self.get_postings_table()
@@ -203,10 +202,11 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         salaries_df = self.get_salaries_table()
         salaries_df.to_sql('salaries', con=self._db_con, if_exists='replace')
 
-    def load_location_table_to_db(self):
-        location_df = self.get_location_table()
-        location_df.to_sql('location', con=self._db_con, if_exists='replace')
+    def load_locations_table_to_db(self):
+        location_df = self.get_locations_table()
+        location_df.to_sql('locations', con=self._db_con, if_exists='replace')
 
-    def load_seniority_table_to_db(self):
-        seniority_df = self.get_seniority_table()
-        seniority_df.to_sql('seniority', con=self._db_con, if_exists='replace')
+    def load_seniorities_table_to_db(self):
+        seniority_df = self.get_seniorities_table()
+        seniority_df.to_sql('seniorities', con=self._db_con,
+                            if_exists='replace')
