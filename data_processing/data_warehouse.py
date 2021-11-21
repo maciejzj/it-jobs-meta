@@ -40,7 +40,9 @@ class DataWarehouseETL(ABC):
         'technology',
         'category',
         'url',
-        'remote',
+        'remote']
+
+    SALARIES_TABLE_COLS = [
         'contract_type',
         'salary_min',
         'salary_max',
@@ -93,6 +95,10 @@ class DataWarehouseETL(ABC):
 
     @abstractmethod
     def get_postings_table():
+        pass
+
+    @abstractmethod
+    def get_salaries_table():
         pass
 
     @abstractmethod
@@ -172,6 +178,10 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         postings_df = self._df[DataWarehouseETL.POSTINGS_TABLE_COLS]
         return postings_df
 
+    def get_salaries_table(self):
+        salaries_df = self._df[DataWarehouseETL.SALARIES_TABLE_COLS]
+        return salaries_df
+
     def get_seniority_table(self):
         seniority_df = self._df.explode('seniority')
         seniority_df = seniority_df[DataWarehouseETL.SENIORITY_TABLE_COLS]
@@ -189,10 +199,14 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         postings_df = self.get_postings_table()
         postings_df.to_sql('postings', con=self._db_con, if_exists='replace')
 
-    def load_seniority_table_to_db(self):
-        seniority_df = self.get_seniority_table()
-        seniority_df.to_sql('seniority', con=self._db_con, if_exists='replace')
+    def load_salaries_table_to_db(self):
+        salaries_df = self.get_salaries_table()
+        salaries_df.to_sql('salaries', con=self._db_con, if_exists='replace')
 
     def load_location_table_to_db(self):
         location_df = self.get_location_table()
         location_df.to_sql('location', con=self._db_con, if_exists='replace')
+
+    def load_seniority_table_to_db(self):
+        seniority_df = self.get_seniority_table()
+        seniority_df.to_sql('seniority', con=self._db_con, if_exists='replace')
