@@ -1,9 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict
+from pathlib import Path
 
 import pandas as pd
 import sqlalchemy as db
+import yaml
 
 from data_ingestion import DataLake
 from geolocator import Geolocator
@@ -117,6 +119,12 @@ def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
     return ret
 
 
+def load_warehouse_db_config(path: Path) -> DataWarehouseDbConfig:
+    with open(path, 'r') as cfg_file:
+        cfg_dict = yaml.safe_load(cfg_file)
+        return DataWarehouseDbConfig(**cfg_dict)
+
+
 class PandasDataWarehouseETL(DataWarehouseETL):
     def __init__(self,
                  postings_data_dict: Dict[str, Any],
@@ -131,7 +139,7 @@ class PandasDataWarehouseETL(DataWarehouseETL):
         self._df.drop(columns=DataWarehouseETL.TO_DROP, inplace=True)
 
     def drop_duplicates(self):
-        self._df.drop_duplicates(subset='index', inplace=True)
+        self._df = self._df[~self._df.index.duplicated(keep='first')]
 
     def replace_values(self):
         self._df.replace(to_replace=DataWarehouseETL.TO_REPLACE, inplace=True)
