@@ -76,7 +76,6 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
 
 @dataclass
 class DataLakeDbConfig:
-    user_name: str
     password: str
     host_address: str
     db_num: int
@@ -91,7 +90,6 @@ def load_data_lake_db_config(path: Path) -> DataLakeDbConfig:
 class RedisDataLake(DataLake):
     def __init__(self, db_config: DataLakeDbConfig):
         self._db = redis.Redis(host=db_config.host_address,
-                               username=db_config.user_name,
                                password=db_config.password,
                                db=db_config.db_num)
 
