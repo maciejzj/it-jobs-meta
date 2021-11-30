@@ -50,7 +50,8 @@ class DataWarehouseETL(ABC):
     SENIORITY_TABLE_COLS = [
         'seniority']
 
-    def run_etl(self):
+    def run_etl(self, postings_data_dict: Dict[str, Any]):
+        self.set_data(postings_data_dict)
         self.drop_unwanted()
         self.drop_duplicates()
         self.replace_values()
@@ -58,6 +59,17 @@ class DataWarehouseETL(ABC):
         self.extract_locations()
         self.extract_contract_type()
         self.extract_salaries()
+        self.load_to_db()
+
+    def load_to_db(self):
+        self.load_postings_table_to_db()
+        self.load_salaries_table_to_db()
+        self.load_locations_table_to_db()
+        self.load_seniorities_table_to_db()
+
+    @abstractmethod
+    def set_data(self, postings_data_dict: Dict[str, Any]):
+        pass
 
     @abstractmethod
     def drop_unwanted():
@@ -126,14 +138,14 @@ def load_warehouse_db_config(path: Path) -> DataWarehouseDbConfig:
 
 
 class PandasDataWarehouseETL(DataWarehouseETL):
-    def __init__(self,
-                 postings_data_dict: Dict[str, Any],
-                 db_config: DataWarehouseDbConfig):
+    def __init__(self, db_config: DataWarehouseDbConfig):
+        self._geolocator = Geolocator()
+        self._db_con = db.create_engine(make_db_uri_from_config(db_config))
+
+    def set_data(self, postings_data_dict: Dict[str, Any]):
         self._df = pd.DataFrame.from_dict(
             postings_data_dict['data']['postings'])
         self._df.set_index('id', inplace=True)
-        self._geolocator = Geolocator()
-        self._db_con = db.create_engine(make_db_uri_from_config(db_config))
 
     def drop_unwanted(self):
         self._df.drop(columns=DataWarehouseETL.TO_DROP, inplace=True)

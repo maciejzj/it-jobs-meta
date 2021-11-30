@@ -73,8 +73,8 @@ DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
 
 class TestHappyPathPandasDataWarehouseETL:
     def setup_method(self):
-        self.etl = PandasDataWarehouseETL(
-            POSTINGS_DATA_DICT_MOCK, DATA_WAREHOUSE_DB_CONFIG_MOCK)
+        self.etl = PandasDataWarehouseETL(DATA_WAREHOUSE_DB_CONFIG_MOCK)
+        self.etl.set_data(POSTINGS_DATA_DICT_MOCK)
 
     def test_drops_unwanted_cols_correctly(self):
         self.etl.drop_unwanted()

@@ -1,7 +1,6 @@
 import dataclasses
 import datetime
 import json
-import logging
 import requests
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -69,8 +68,6 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
             metadata=metadata,
             data=json_data)
 
-        logging.info(
-            f'Scraped new data from {cls.SOURCE_NAME}, on {datetime_now}.')
         return data
 
 
