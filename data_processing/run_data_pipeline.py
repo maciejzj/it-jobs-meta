@@ -24,14 +24,14 @@ def make_data_source() -> PostingsDataSource:
 
 def make_data_lake() -> DataLake:
     data_lake_config = load_data_lake_db_config(
-        Path('data_lake_db_config.yaml'))
+        Path('data_processing/data_lake_db_config.yaml'))
     data_lake = RedisDataLake(data_lake_config)
     return data_lake
 
 
 def make_data_warehouse_etl() -> DataWarehouseETL:
     dw_config = load_warehouse_db_config(
-        Path('warehouse_db_config.yaml'))
+        Path('data_processing/warehouse_db_config.yaml'))
     data_warehouse_etl = PandasDataWarehouseETL(dw_config)
     return data_warehouse_etl
 
