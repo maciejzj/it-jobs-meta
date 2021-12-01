@@ -1,5 +1,6 @@
 geopy
 pandas
+pymysql
 pytest
 pytest-mock
 pyyaml
