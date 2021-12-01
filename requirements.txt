@@ -1,6 +1,7 @@
 geopy
 pandas
 pytest
+pytest-mock
 pyyaml
 redis
 requests
