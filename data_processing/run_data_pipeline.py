@@ -3,7 +3,7 @@ from pathlib import Path
 import logging
 import sys
 
-from data_ingestion import (
+from .data_ingestion import (
     PostingsDataSource,
     NoFluffJobsPostingsDataSource,
     DataLake,
@@ -11,7 +11,7 @@ from data_ingestion import (
     load_data_lake_db_config,
     make_data_key,
     make_json_string)
-from data_warehouse import (
+from .data_warehouse import (
     DataWarehouseETL,
     PandasDataWarehouseETL,
     load_warehouse_db_config)

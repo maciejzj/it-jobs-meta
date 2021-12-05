@@ -7,7 +7,7 @@ import pandas as pd
 import sqlalchemy as db
 import yaml
 
-from geolocator import Geolocator
+from .geolocator import Geolocator
 
 
 class DataWarehouseETL(ABC):
