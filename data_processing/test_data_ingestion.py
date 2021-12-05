@@ -1,7 +1,7 @@
 import datetime
 import json
 
-from data_ingestion import (
+from .data_ingestion import (
     NoFluffJobsPostingsDataSource,
     make_data_key,
     make_json_string)

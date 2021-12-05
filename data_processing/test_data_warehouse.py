@@ -2,7 +2,7 @@ import math
 
 import pytest
 
-from data_warehouse import (DataWarehouseDbConfig,
+from .data_warehouse import (DataWarehouseDbConfig,
                             DataWarehouseETL,
                             PandasDataWarehouseETL)
 
