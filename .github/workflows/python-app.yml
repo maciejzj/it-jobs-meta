@@ -22,7 +22,7 @@ jobs:
         python-version: "3.9"
     - name: Setup
       run: |
-        timedatectl set-timezone Europe/Warsaw
+        sudo timedatectl set-timezone Europe/Warsaw
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
