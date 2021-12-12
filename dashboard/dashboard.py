@@ -34,7 +34,6 @@ def gather_data():
     return ret
 
 
-
 def make_layout():
     data = gather_data()
     layout = html.Div(children=[
@@ -48,9 +47,12 @@ def make_layout():
             data['locations'], data['salaries'])),
         dcc.Graph(figure=SalariesSeniorotiesMapChart.make_fig(
             data['locations'], data['salaries'], data['seniorities'])),
-        dcc.Graph(figure=SenioritiesHistogram.make_fig(data['seniorities'], data['salaries'])),
-        dcc.Graph(figure=TechnologiesViolinChart.make_fig(data['postings'], data['salaries'], data['seniorities'])),
-        dcc.Graph(figure=ContractTypeViolinChart.make_fig(data['postings'], data['salaries']))
+        dcc.Graph(figure=SenioritiesHistogram.make_fig(
+            data['seniorities'], data['salaries'])),
+        dcc.Graph(figure=TechnologiesViolinChart.make_fig(
+            data['postings'], data['salaries'], data['seniorities'])),
+        dcc.Graph(figure=ContractTypeViolinChart.make_fig(
+            data['postings'], data['salaries']))
     ])
     return layout
 
