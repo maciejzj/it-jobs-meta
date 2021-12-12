@@ -4,6 +4,7 @@ from plotly import express as px
 from plotly import graph_objects as go
 from sklearn import preprocessing
 
+
 class RemotePieChart:
     def make_fig(postings_df):
         fig = px.pie(postings_df, names='remote',
@@ -39,8 +40,8 @@ class CategoriesPieChart:
 
 class SeniorityPieChart:
     def make_fig(seniorities_df):
-       fig = px.pie(seniorities_df, names='seniority', title='Seniority')
-       return fig
+        fig = px.pie(seniorities_df, names='seniority', title='Seniority')
+        return fig
 
 
 class CategoriesTechnologiesSankeyChart:
@@ -106,30 +107,37 @@ class SalariesMapChart:
                              fitbounds='locations', hover_data={'city': True})
         return fig
 
+
 class SalariesSeniorotiesMapChart:
     def make_fig(locations_df, salaries_df, seniorities_df):
         loc_sal_df = locations_df.merge(salaries_df, on='id')
         lss_df = loc_sal_df.merge(seniorities_df, on='id')
 
         lss_df = lss_df[lss_df['seniority'].isin(('Junior', 'Mid', 'Senior'))]
-        salaries = lss_df.groupby(['seniority', 'city'])[['salary_mean', 'lat', 'lon']].mean()
+        salaries = lss_df.groupby(['seniority', 'city'])[
+            ['salary_mean', 'lat', 'lon']].mean()
         job_counts = lss_df.groupby(['seniority', 'city'])['id'].count()
-        jobs_cities_salaries = pd.concat([salaries, job_counts.rename('job_counts')], axis=1).reset_index()
+        jobs_cities_salaries = pd.concat(
+            [salaries, job_counts.rename('job_counts')], axis=1).reset_index()
         fig = px.scatter_geo(jobs_cities_salaries, scope='europe', lat='lat', lon='lon',
-                            size='job_counts', color='salary_mean', fitbounds='locations',
-                            title='Salary mean and jobs number',
-                            hover_data={'city': True}, facet_col='seniority')
+                             size='job_counts', color='salary_mean', fitbounds='locations',
+                             title='Salary mean and jobs number',
+                             hover_data={'city': True}, facet_col='seniority')
         return fig
+
 
 class SenioritiesHistogram:
     MAX_SALARY = 40000
 
     def make_fig(seniorities_df, salaries_df):
         sen_sal_df = seniorities_df.merge(salaries_df, on='id')
-        sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] < SenioritiesHistogram.MAX_SALARY]
+        sen_sal_df = sen_sal_df[sen_sal_df['salary_mean']
+                                < SenioritiesHistogram.MAX_SALARY]
         sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] > 0]
-        fig = px.histogram(sen_sal_df, x='salary_mean', color='seniority', title = 'Salaries histogram')
+        fig = px.histogram(sen_sal_df, x='salary_mean',
+                           color='seniority', title='Salaries histogram')
         return fig
+
 
 class ContractTypeViolinChart:
     MAX_SALARY = 40000
@@ -139,7 +147,8 @@ class ContractTypeViolinChart:
         pos_sal_df = postings_df.merge(salaries_df, on='id')
         tech_n_largest = pos_sal_df['technology'].value_counts().nlargest(
             ContractTypeViolinChart.TECH_N_LARGEST).index.to_list()
-        tech_n_largest_df = pos_sal_df[pos_sal_df['technology'].isin(tech_n_largest)]
+        tech_n_largest_df = pos_sal_df[pos_sal_df['technology'].isin(
+            tech_n_largest)]
         limited_salary = tech_n_largest_df[~(
             tech_n_largest_df['salary_mean'] > ContractTypeViolinChart.MAX_SALARY)]
         b2b_df = limited_salary[limited_salary['contract_type'] == 'b2b']
@@ -159,10 +168,11 @@ class ContractTypeViolinChart:
         fig.update_layout(violingap=0, violinmode='overlay')
         return fig
 
+
 class TechnologiesViolinChart:
     MAX_SALARY = 40000
-    TECH_N_LARGEST = 8 
-    
+    TECH_N_LARGEST = 8
+
     def make_fig(postings_df, salaries_df, senorities_df):
         pos_sal_df = postings_df.merge(salaries_df, on='id')
         pss_df = pos_sal_df.merge(senorities_df, on='id')
