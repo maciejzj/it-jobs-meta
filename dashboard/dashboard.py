@@ -11,7 +11,7 @@ from data_processing.data_warehouse import (make_db_uri_from_config,
 from .dashboard_components import (
     RemotePieChart,
     SalariesMapChart,
-    SalariesSeniorotiesMapChart,
+    SalariesSenioritiesMapChart,
     SenioritiesHistogram,
     TechnologiesPieChart,
     CategoriesPieChart,
@@ -45,7 +45,7 @@ def make_layout():
             data['postings'])),
         dcc.Graph(figure=SalariesMapChart.make_fig(
             data['locations'], data['salaries'])),
-        dcc.Graph(figure=SalariesSeniorotiesMapChart.make_fig(
+        dcc.Graph(figure=SalariesSenioritiesMapChart.make_fig(
             data['locations'], data['salaries'], data['seniorities'])),
         dcc.Graph(figure=SenioritiesHistogram.make_fig(
             data['seniorities'], data['salaries'])),

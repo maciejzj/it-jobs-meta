@@ -108,7 +108,7 @@ class SalariesMapChart:
         return fig
 
 
-class SalariesSeniorotiesMapChart:
+class SalariesSenioritiesMapChart:
     def make_fig(locations_df, salaries_df, seniorities_df):
         loc_sal_df = locations_df.merge(salaries_df, on='id')
         lss_df = loc_sal_df.merge(seniorities_df, on='id')
