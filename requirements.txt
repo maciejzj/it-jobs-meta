@@ -1,4 +1,6 @@
+dash
 geopy
+numpy
 pandas
 pymysql
 pytest
@@ -7,3 +9,4 @@ pyyaml
 redis
 requests
 sqlalchemy
+sklearn

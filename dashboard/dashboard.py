@@ -1,12 +1,25 @@
 from pathlib import Path
 
 import dash
-import dash_core_components as dcc
-import dash_html_components as html
 import pandas as pd
 import sqlalchemy as db
+from dash import dcc
+from dash import html
 
-from data_processing.data_warehouse import make_db_uri_from_config, load_warehouse_db_config
+from data_processing.data_warehouse import (make_db_uri_from_config,
+                                            load_warehouse_db_config)
+from .dashboard_components import (
+    RemotePieChart,
+    SalariesMapChart,
+    SalariesSeniorotiesMapChart,
+    SenioritiesHistogram,
+    TechnologiesPieChart,
+    CategoriesPieChart,
+    SeniorityPieChart,
+    CategoriesTechnologiesSankeyChart,
+    ContractTypeViolinChart,
+    TechnologiesViolinChart,
+)
 
 
 def gather_data():
@@ -22,17 +35,34 @@ def gather_data():
 
 
 def make_layout():
-    layout = html.Div(children=[html.H1('Hello world!')])
+    data = gather_data()
+    layout = html.Div(children=[
+        dcc.Graph(figure=RemotePieChart.make_fig(data['postings'])),
+        dcc.Graph(figure=TechnologiesPieChart.make_fig(data['postings'])),
+        dcc.Graph(figure=CategoriesPieChart.make_fig(data['postings'])),
+        dcc.Graph(figure=SeniorityPieChart.make_fig(data['seniorities'])),
+        dcc.Graph(figure=CategoriesTechnologiesSankeyChart.make_fig(
+            data['postings'])),
+        dcc.Graph(figure=SalariesMapChart.make_fig(
+            data['locations'], data['salaries'])),
+        dcc.Graph(figure=SalariesSeniorotiesMapChart.make_fig(
+            data['locations'], data['salaries'], data['seniorities'])),
+        dcc.Graph(figure=SenioritiesHistogram.make_fig(
+            data['seniorities'], data['salaries'])),
+        dcc.Graph(figure=TechnologiesViolinChart.make_fig(
+            data['postings'], data['salaries'], data['seniorities'])),
+        dcc.Graph(figure=ContractTypeViolinChart.make_fig(
+            data['postings'], data['salaries']))
+    ])
     return layout
 
 
 def make_dash_app():
-    app=dash.Dash('it-jobs-meta-dashboard')
+    app = dash.Dash('it-jobs-meta-dashboard')
     return app
 
 
 if __name__ == '__main__':
-    data = gather_data()
-    app=make_dash_app()
-    app.layout=make_layout()
-    app.run_server(debug=True)
+    app = make_dash_app()
+    app.layout = make_layout()
+    app.run_server(debug=True, host='0.0.0.0')

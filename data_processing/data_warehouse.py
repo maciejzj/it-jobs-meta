@@ -59,6 +59,7 @@ class DataWarehouseETL(ABC):
         self.extract_locations()
         self.extract_contract_type()
         self.extract_salaries()
+        self.unify_missing_values()
         self.load_to_db()
 
     def load_to_db(self):
@@ -93,6 +94,10 @@ class DataWarehouseETL(ABC):
 
     @abstractmethod
     def extract_salaries():
+        pass
+
+    @abstractmethod
+    def unify_missing_values():
         pass
 
     @abstractmethod
@@ -176,6 +181,9 @@ class PandasDataWarehouseETL(DataWarehouseETL):
             lambda salary_dict: salary_dict['to'])
         self._df['salary_mean'] = self._df[[
             'salary_max', 'salary_min']].mean(axis=1)
+    
+    def unify_missing_values(self):
+        self._df.replace('', None, inplace=True)
 
     def get_processed_data_table(self):
         return self._df
