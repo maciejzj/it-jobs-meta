@@ -73,71 +73,85 @@ def make_layout():
     graphs = make_graphs(data)
 
     layout = html.Div(children=[
-        dbc.NavbarSimple(dbc.NavLink(dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
-                         outline=True, color='light'), active=True), brand='It Jobs Meta', color='dark', dark=True),
+        dbc.NavbarSimple(
+            dbc.NavLink(
+                dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
+                           color='dark'), active=True),
+            brand='It Jobs Meta', className='bg-white'),
+
         dbc.Container([
+            dbc.Row([
+                dbc.Col(
+                    html.Div(children=[
+                        html.H1('Daily analysis of IT job offers in Poland'),
+                        html.P('''
+                            Lorem Ipsum is simply dummy text of the printing
+                            and typesetting industry. Lorem Ipsum has been the
+                            industry's standard dummy text ever since the
+                            1500s, when an unknown printer took a galley of
+                            type and scrambled it to make a type specimen book.
+                        '''),
+                        dbc.Button('To the data', outline=True,
+                                   active=True, color='light')
+                    ], className='p-5 text-white bg-dark rounded shadow-lg',
+                    ), md=6, className='mt-5')
+            ]),
 
-            html.Div(
-                dbc.Container([
-                    html.H1('Daily data about IT jobs market in Poland'),
-                    html.Hr(className='my-2'),
-                    html.P([
-                        'Meta-analysis of job postings from ',
-                        dbc.Badge('No Fluff Jobs', href='https://nofluffjobs.com',
-                                  color='primary', className='text-decoration-none')],
-                           className='lead'),
-                    html.P(
-                        'A place for software developers to get daily '
-                        'statistical meta-analysis of online-posted job '
-                        'offers.'
-                    ),
-                    dbc.Accordion([
-                        dbc.AccordionItem([
-                            html.P("What is this site?"),
-                            dbc.Button("Click here"),
-                        ], title="What is this site?"),
-                        dbc.AccordionItem([
-                            html.P("How can I use this?"),
-                            dbc.Button("Don't click me!", color="danger"),
-                        ], title="How can I use this site?"),
-                        dbc.AccordionItem(
-                            "",
-                            title="How does this work?"),
-                    ]),
-                    dbc.Alert(['Data last obtained on: ', html.Strong('15th Decemember 2021')],
-                              color='primary', className='mt-3'),
-                ], fluid=True, className=''),
-                className='p-3 bg-light border rounded-3 mt-3'),
+            dbc.Container([
+                html.H2('About'),
+                html.P('''
+                Lorem Ipsum is simply dummy text of the printing and
+                typesetting industry. Lorem Ipsum has been the industry's
+                standard dummy text ever since the 1500s, when an unknown
+                printer took a galley of type and scrambled it to make a type
+                specimen book. It has survived not only five centuries, but
+                also the leap into electronic typesetting, remaining
+                essentially unchanged. It was popularised in the 1960s with the
+                release of Letraset sheets containing Lorem Ipsum passages, and
+                more recently with desktop publishing software like Aldus
+                PageMaker including
+                versions of Lorem Ipsum.
+            '''),
+            ], className='text-center mt-5'),
 
-            html.H2('Postings metadata visualisations', className='mt-3'),
+            dbc.Container([
+                html.H2('Data'),
+                html.B('Last obtained on 21.12.21'),
+            ], className='text-center mt-5'),
 
-            dbc.Card([
-                dbc.CardHeader('Categories and technologies'),
-                dbc.Row([
-                    dbc.Col(graphs['categories_pie_chart'], md=6),
-                    dbc.Col(graphs['technologies_pie_chart'], md=6)
-                ], align='center'),
-                dbc.Row([
-                    dbc.Col(graphs['cat_tech_sankey_chart'], md=6),
-                    dbc.Col(graphs['seniority_pie_chart'], md=6)
-                ], align='center'),
-            ], className=''),
-            dbc.Card([
-                dbc.CardHeader('Location and remote work'),
-                dbc.Row([
-                    dbc.Col(graphs['remote_pie_chart'], md=6),
-                    dbc.Col(graphs['salaries_map'], md=6)
-                ], align='center'),
-                graphs['salaries_seniorities_map'],
-            ], className='mt-3 '),
-            dbc.Card([
-                dbc.CardHeader('Salaries breakdown'),
-                graphs['seniorities_histogram'],
-                graphs['technologies_violin_plot'],
-                graphs['contract_type_violin_plot'],
-            ], className='mt-3 mb-3')
+            html.H3('Categories and seniorities', className='mt-4'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['categories_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
+                dbc.Col(dbc.Card(graphs['technologies_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
+            ], align='center'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['cat_tech_sankey_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=7),
+                dbc.Col(dbc.Card(graphs['seniority_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=5),
+            ], align='center'),
+            dbc.Card(graphs['seniorities_histogram'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+
+            html.H3('Locations and remote', className='mt-4'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['remote_pie_chart'],
+                    className='mt-4 p-1 border-0 rounded shadow'), md=6),
+                dbc.Col(dbc.Card(graphs['salaries_map'],
+                    className='mt-4 p-1 border-0 rounded shadow'), md=6),
+            ], align='center'),
+            dbc.Card(graphs['salaries_seniorities_map'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+
+            html.H3('Salaries breakdown', className='mt-4'),
+            dbc.Card(graphs['technologies_violin_plot'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+            dbc.Card(graphs['contract_type_violin_plot'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
         ]),
-    ], className='bg-light w-100')
+    ], className='w-100')
     return layout
 
 
