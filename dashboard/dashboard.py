@@ -1,17 +1,20 @@
 from pathlib import Path
 
 import dash
+import dash_bootstrap_components as dbc
 import pandas as pd
 import sqlalchemy as db
 from dash import dcc
 from dash import html
 
-from data_processing.data_warehouse import (make_db_uri_from_config,
-                                            load_warehouse_db_config)
+from data_processing.data_warehouse import (
+    make_db_uri_from_config,
+    load_warehouse_db_config)
+
 from .dashboard_components import (
     RemotePieChart,
     SalariesMapChart,
-    SalariesSeniorotiesMapChart,
+    SalariesSenioritiesMapChart,
     SenioritiesHistogram,
     TechnologiesPieChart,
     CategoriesPieChart,
@@ -34,31 +37,133 @@ def gather_data():
     return ret
 
 
+def make_graphs(data):
+    graphs = {
+        'remote_pie_chart':
+            dcc.Graph(figure=RemotePieChart.make_fig(data['postings'])),
+        'technologies_pie_chart':
+            dcc.Graph(figure=TechnologiesPieChart.make_fig(data['postings'])),
+        'categories_pie_chart':
+            dcc.Graph(figure=CategoriesPieChart.make_fig(data['postings'])),
+        'seniority_pie_chart':
+            dcc.Graph(figure=SeniorityPieChart.make_fig(data['seniorities'])),
+        'cat_tech_sankey_chart':
+            dcc.Graph(figure=CategoriesTechnologiesSankeyChart.make_fig(
+                data['postings'])),
+        'salaries_map': dcc.Graph(figure=SalariesMapChart.make_fig(
+            data['locations'], data['salaries'])),
+        'salaries_seniorities_map':
+            dcc.Graph(figure=SalariesSenioritiesMapChart.make_fig(
+                data['locations'], data['salaries'], data['seniorities'])),
+        'seniorities_histogram':
+            dcc.Graph(figure=SenioritiesHistogram.make_fig(
+                data['seniorities'], data['salaries'])),
+        'technologies_violin_plot':
+            dcc.Graph(figure=TechnologiesViolinChart.make_fig(
+                data['postings'], data['salaries'], data['seniorities'])),
+        'contract_type_violin_plot':
+            dcc.Graph(figure=ContractTypeViolinChart.make_fig(
+                data['postings'], data['salaries']))
+    }
+    return graphs
+
+
 def make_layout():
     data = gather_data()
+    graphs = make_graphs(data)
+
     layout = html.Div(children=[
-        dcc.Graph(figure=RemotePieChart.make_fig(data['postings'])),
-        dcc.Graph(figure=TechnologiesPieChart.make_fig(data['postings'])),
-        dcc.Graph(figure=CategoriesPieChart.make_fig(data['postings'])),
-        dcc.Graph(figure=SeniorityPieChart.make_fig(data['seniorities'])),
-        dcc.Graph(figure=CategoriesTechnologiesSankeyChart.make_fig(
-            data['postings'])),
-        dcc.Graph(figure=SalariesMapChart.make_fig(
-            data['locations'], data['salaries'])),
-        dcc.Graph(figure=SalariesSeniorotiesMapChart.make_fig(
-            data['locations'], data['salaries'], data['seniorities'])),
-        dcc.Graph(figure=SenioritiesHistogram.make_fig(
-            data['seniorities'], data['salaries'])),
-        dcc.Graph(figure=TechnologiesViolinChart.make_fig(
-            data['postings'], data['salaries'], data['seniorities'])),
-        dcc.Graph(figure=ContractTypeViolinChart.make_fig(
-            data['postings'], data['salaries']))
-    ])
+        dbc.NavbarSimple(
+            dbc.NavLink(
+                dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
+                           color='dark'), active=True),
+            brand='It Jobs Meta', className='bg-white'),
+
+        dbc.Container([
+            dbc.Row([
+                dbc.Col(
+                    html.Div(children=[
+                        html.H1('Daily analysis of IT job offers in Poland'),
+                        html.P('''
+                            Lorem Ipsum is simply dummy text of the printing
+                            and typesetting industry. Lorem Ipsum has been the
+                            industry's standard dummy text ever since the
+                            1500s, when an unknown printer took a galley of
+                            type and scrambled it to make a type specimen book.
+                        '''),
+                        dbc.Button('To the data', outline=True,
+                                   active=True, color='light')
+                    ], className='p-5 text-white bg-dark rounded shadow-lg',
+                    ), md=6, className='mt-5')
+            ]),
+
+            dbc.Container([
+                html.H2('About'),
+                html.P('''
+                Lorem Ipsum is simply dummy text of the printing and
+                typesetting industry. Lorem Ipsum has been the industry's
+                standard dummy text ever since the 1500s, when an unknown
+                printer took a galley of type and scrambled it to make a type
+                specimen book. It has survived not only five centuries, but
+                also the leap into electronic typesetting, remaining
+                essentially unchanged. It was popularised in the 1960s with the
+                release of Letraset sheets containing Lorem Ipsum passages, and
+                more recently with desktop publishing software like Aldus
+                PageMaker including
+                versions of Lorem Ipsum.
+            '''),
+            ], className='text-center mt-5'),
+
+            dbc.Container([
+                html.H2('Data'),
+                html.B('Last obtained on 21.12.21'),
+            ], className='text-center mt-5'),
+
+            html.H3('Categories and seniorities', className='mt-4'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['categories_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
+                dbc.Col(dbc.Card(graphs['technologies_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
+            ], align='center'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['cat_tech_sankey_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=7),
+                dbc.Col(dbc.Card(graphs['seniority_pie_chart'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=5),
+            ], align='center'),
+            dbc.Card(graphs['seniorities_histogram'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+
+            html.H3('Locations and remote', className='mt-4'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['remote_pie_chart'],
+                    className='mt-4 p-1 border-0 rounded shadow'), md=6),
+                dbc.Col(dbc.Card(graphs['salaries_map'],
+                    className='mt-4 p-1 border-0 rounded shadow'), md=6),
+            ], align='center'),
+            dbc.Card(graphs['salaries_seniorities_map'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+
+            html.H3('Salaries breakdown', className='mt-4'),
+            dbc.Card(graphs['technologies_violin_plot'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+            dbc.Card(graphs['contract_type_violin_plot'],
+                     className='mt-4 p-1 border-0 rounded shadow'),
+        ]),
+    ], className='w-100')
     return layout
 
 
 def make_dash_app():
-    app = dash.Dash('it-jobs-meta-dashboard')
+    app = dash.Dash(
+        'it-jobs-meta-dashboard',
+        external_stylesheets=[
+            dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        meta_tags=[
+            {"name": "viewport",
+             "content": "width=device-width, initial-scale=1"},
+        ])
     return app
 
 
