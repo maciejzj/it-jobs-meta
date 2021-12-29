@@ -5,12 +5,11 @@ import sys
 
 from .data_ingestion import (
     PostingsDataSource,
-    NoFluffJobsPostingsDataSource,
+    NoFluffJobsPostingsDataSource)
+from .data_lake import (
     DataLake,
     RedisDataLake,
-    load_data_lake_db_config,
-    make_data_key,
-    make_json_string)
+    load_data_lake_db_config)
 from .data_warehouse import (
     DataWarehouseETL,
     PandasDataWarehouseETL,
@@ -39,11 +38,10 @@ def make_data_warehouse_etl() -> DataWarehouseETL:
 def run_ingest_data(data_source: PostingsDataSource,
                     data_lake: DataLake):
     data = data_source.get()
-    data_key = make_data_key(data)
-    json_data_string = make_json_string(data)
-
-    data_lake.set(data_key, json_data_string)
-    return asdict(data)
+    data_key = data.make_key_for_data()
+    json_data_string = data.make_json_str_from_data()
+    data_lake.set_data(data_key, json_data_string)
+    return data_lake.get_data(data_key)
 
 
 def run_warehouse_data(data, data_warehouse_etl: DataWarehouseETL):
