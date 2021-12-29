@@ -2,7 +2,7 @@ import datetime
 import json
 
 from .data_ingestion import NoFluffJobsPostingsDataSource
-    
+  
 
 class MockResponse:
     @staticmethod
@@ -29,7 +29,6 @@ class TestNoFluffJobsPostingsDataSource:
         obtained_datetime = results.metadata.obtained_datetime
         assert obtained_datetime == expected
 
-
     def test_make_data_key_returns_correct_key(self, mocker):
         datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
         expected = '1638343805_nofluffjobs'
@@ -42,7 +41,6 @@ class TestNoFluffJobsPostingsDataSource:
         result = data.make_key_for_data() 
         assert result == expected
 
-
     def test_make_json_string_returns_json_with_correct_structure(self, mocker):
         mocker.patch('requests.get', return_value=MockResponse())
 
@@ -52,7 +50,6 @@ class TestNoFluffJobsPostingsDataSource:
 
         assert 'metadata' in result_back_to_json_dict.keys()
         assert 'data' in result_back_to_json_dict.keys()
-
 
     def test_make_json_string_returns_correct_metadata(self, mocker):
         datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)

@@ -9,11 +9,13 @@ from typing import Any
 import redis
 import yaml
 
+
 @dataclass
 class DataLakeDbConfig:
     password: str
     host_address: str
     db_num: int
+
 
 class DataLake(ABC):
     """Key-value object storage interface for raw data scraped data."""
@@ -25,6 +27,7 @@ class DataLake(ABC):
     @abstractmethod
     def get_data(self, key: str) -> dict[str, Any]:
         """Get data stored under key. Data is assumed ot be json string."""
+
 
 def load_data_lake_db_config(path: Path) -> DataLakeDbConfig:
     with open(path, 'r', encoding='UTF-8') as cfg_file:
