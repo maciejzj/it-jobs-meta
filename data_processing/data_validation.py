@@ -5,6 +5,7 @@ from pandera import typing as pt
 
 
 class PostingsSchema(pa.SchemaModel):
+    id: pt.Series[str] = pa.Field(unique=True)
     name: pt.Series[str] = pa.Field(nullable=True)
     posted:  pt.Series[datetime] = pa.Field(coerce=True, nullable=True)
     title: pt.Series[str] = pa.Field(nullable=True)
