@@ -3,11 +3,13 @@ from pathlib import Path
 
 import pytest
 import json
+import pandas as pd
 
-from ..data_warehouse import (DataWarehouseDbConfig,
-                            DataWarehouseETL,
-                            PandasDataWarehouseETL)
-from ..data_validation import MySychema
+from ..data_warehouse import (
+    DataWarehouseDbConfig,
+    EtlConstants,
+    PandasEtlTransformationEngine)
+
 
 POSTINGS_LIST_MOCK = [{
     'id': 'ELGZSKOL',
@@ -76,50 +78,37 @@ DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
 
 class TestHappyPathPandasDataWarehouseETL:
     def setup_method(self):
-        self.etl = PandasDataWarehouseETL(DATA_WAREHOUSE_DB_CONFIG_MOCK)
-        self.etl.set_data(POSTINGS_DATA_DICT_MOCK)
+        self.df = pd.DataFrame(POSTINGS_LIST_MOCK)
+        self.df = self.df.set_index('id')
+        self.transformer = PandasEtlTransformationEngine()
 
     def test_drops_unwanted_cols_correctly(self):
-        self.etl.drop_unwanted()
-        result = self.etl.get_processed_data_table()
-        for key in DataWarehouseETL.TO_DROP:
+        result = self.transformer.drop_unwanted(self.df)
+        for key in EtlConstants.TO_DROP:
             assert key not in result
 
     def test_extracts_remote_correclty(self):
-        self.etl.extract_remote()
-        result = self.etl.get_processed_data_table()
+        result = self.transformer.extract_remote(self.df)
         assert 'remote' in result
         assert result.loc['ELGZSKOL']['remote']
 
     def test_extracts_locations_correctly(self):
-        self.etl.extract_locations()
-        result = self.etl.get_processed_data_table()
+        result = self.transformer.extract_locations(self.df)
         assert 'city' in result
         assert result.loc['ELGZSKOL']['city'][0][0] == 'Warszawa'
         assert pytest.approx(result.loc['ELGZSKOL']['city'][0][1], 1) == 52.2
         assert pytest.approx(result.loc['ELGZSKOL']['city'][0][2], 1) == 21.0
 
     def test_extracts_contract_type_correctly(self):
-        self.etl.extract_contract_type()
-        result = self.etl.get_processed_data_table()
+        result = self.transformer.extract_contract_type(self.df)
         assert 'contract_type' in result
         assert result.loc['ELGZSKOL']['contract_type'] == 'b2b'
 
     def test_extracts_salaries_correctly(self):
-        self.etl.extract_salaries()
-        result = self.etl.get_processed_data_table()
+        result = self.transformer.extract_salaries(self.df)
         assert 'salary_min' in result
         assert 'salary_max' in result
         assert 'salary_mean' in result
         assert result.loc['ELGZSKOL']['salary_min'] == 20000
         assert result.loc['ELGZSKOL']['salary_max'] == 25000
         assert result.loc['ELGZSKOL']['salary_mean'] == 22500
-
-
-def test_pandera():
-    data_path = Path('data_processing/test/1640874783_nofluffjobs.json')
-    with open(data_path, 'r') as text_file:
-        data = json.load(text_file)
-        
-    etl = PandasDataWarehouseETL(DATA_WAREHOUSE_DB_CONFIG_MOCK)
-    etl.run_etl(data)

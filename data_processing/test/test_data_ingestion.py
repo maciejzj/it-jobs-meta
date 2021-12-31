@@ -49,7 +49,7 @@ class TestNoFluffJobsPostingsDataSource:
         result_back_to_json_dict = json.loads(result)
 
         assert 'metadata' in result_back_to_json_dict.keys()
-        assert 'data' in result_back_to_json_dict.keys()
+        assert 'raw_data' in result_back_to_json_dict.keys()
 
     def test_make_json_string_returns_correct_metadata(self, mocker):
         datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)

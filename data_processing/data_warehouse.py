@@ -289,7 +289,7 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     @pa.check_types
     def prepare_postings_table(
             self, data: pd.DataFrame) -> pa.typing.DataFrame[PostingsSchema]:
-        return data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
+        return data[EtlConstants.POSTINGS_TABLE_COLS]
 
     @pa.check_types
     def prepare_salaries_table(
