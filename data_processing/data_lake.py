@@ -50,9 +50,9 @@ class RedisDataLake(DataLake):
         """Store data under key. Data is assumed to be json string."""
         self._db.set(key, data)
 
-    def get_data(self, key: str) -> dict[str, Any]:
+    def get_data(self, key: str) -> str:
         """Get data stored under key. Data is assumed ot be json string."""
         data = self._db.get(key)
         if data is None:
             raise KeyError(f'No data stored in db under key: {key}')
-        return json.loads(data)
+        return data

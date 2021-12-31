@@ -10,8 +10,10 @@ from .data_lake import (
     RedisDataLake,
     load_data_lake_db_config)
 from .data_warehouse import (
-    DataWarehouseETL,
-    PandasDataWarehouseETL,
+    PandasEtlSqlLoadingEngine,
+    PandasEtlExtractionFromJsonStr,
+    PandasEtlTransformationEngine,
+    EtlPipeline,
     load_warehouse_db_config)
 
 
@@ -27,10 +29,12 @@ def make_data_lake() -> DataLake:
     return data_lake
 
 
-def make_data_warehouse_etl() -> DataWarehouseETL:
-    dw_config = load_warehouse_db_config(
-        Path('data_processing/warehouse_db_config.yaml'))
-    data_warehouse_etl = PandasDataWarehouseETL(dw_config)
+def make_data_warehouse_etl():
+    extracor = PandasEtlExtractionFromJsonStr()
+    transformer = PandasEtlTransformationEngine()
+    loader = PandasEtlSqlLoadingEngine(load_warehouse_db_config(
+        Path('data_processing/warehouse_db_config.yaml')))
+    data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
     return data_warehouse_etl
 
 
@@ -43,8 +47,8 @@ def run_ingest_data(data_source: PostingsDataSource,
     return data_lake.get_data(data_key)
 
 
-def run_warehouse_data(data, data_warehouse_etl: DataWarehouseETL):
-    data_warehouse_etl.run_etl(data)
+def run_warehouse_data(data, data_warehouse_etl):
+    data_warehouse_etl.run(data)
 
 
 def setup_logging():

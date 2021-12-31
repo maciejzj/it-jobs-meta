@@ -3,11 +3,12 @@ dash-bootstrap-components
 geopy
 numpy
 pandas
+pandera
 pymysql
 pytest
 pytest-mock
 pyyaml
 redis
 requests
-sqlalchemy
 sklearn
+sqlalchemy

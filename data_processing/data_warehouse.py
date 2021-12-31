@@ -1,16 +1,18 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict
+from typing import Generic, TypeVar
 
+import json
+import yaml
 import pandas as pd
 import sqlalchemy as db
-import yaml
 
 from .geolocator import Geolocator
 
 
-class DataWarehouseETL(ABC):
+@dataclass
+class EtlConstants:
     TO_DROP = [
         'renewed',
         'logo',
@@ -50,76 +52,6 @@ class DataWarehouseETL(ABC):
     SENIORITY_TABLE_COLS = [
         'seniority']
 
-    def run_etl(self, postings_data_dict: Dict[str, Any]):
-        self.set_data(postings_data_dict)
-        self.drop_unwanted()
-        self.drop_duplicates()
-        self.replace_values()
-        self.extract_remote()
-        self.extract_locations()
-        self.extract_contract_type()
-        self.extract_salaries()
-        self.unify_missing_values()
-        self.load_to_db()
-
-    def load_to_db(self):
-        self.load_postings_table_to_db()
-        self.load_salaries_table_to_db()
-        self.load_locations_table_to_db()
-        self.load_seniorities_table_to_db()
-
-    @abstractmethod
-    def set_data(self, postings_data_dict: Dict[str, Any]):
-        pass
-
-    @abstractmethod
-    def drop_unwanted():
-        pass
-
-    @abstractmethod
-    def replace_values():
-        pass
-
-    @abstractmethod
-    def extract_remote():
-        pass
-
-    @abstractmethod
-    def extract_locations():
-        pass
-
-    @abstractmethod
-    def extract_contract_type():
-        pass
-
-    @abstractmethod
-    def extract_salaries():
-        pass
-
-    @abstractmethod
-    def unify_missing_values():
-        pass
-
-    @abstractmethod
-    def get_processed_data_table():
-        pass
-
-    @abstractmethod
-    def get_postings_table():
-        pass
-
-    @abstractmethod
-    def get_salaries_table():
-        pass
-
-    @abstractmethod
-    def get_locations_table():
-        pass
-
-    @abstractmethod
-    def get_seniorities_table():
-        pass
-
 
 @dataclass
 class DataWarehouseDbConfig:
@@ -130,6 +62,105 @@ class DataWarehouseDbConfig:
     db_name: str
 
 
+DataType = TypeVar('DataType')
+PipelineInputType = TypeVar('PipelineInputType')
+
+
+class EtlExtractionEngine(Generic[PipelineInputType, DataType], ABC):
+    @abstractmethod
+    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
+        pass
+
+
+class EtlTransformationEngine(Generic[DataType], ABC):
+    @abstractmethod
+    def drop_unwanted(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def drop_duplicates(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def replace_values(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def extract_remote(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def extract_locations(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def extract_contract_type(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def extract_salaries(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def unify_missing_values(self, data: DataType) -> DataType:
+        pass
+
+
+class EtlLoadingEngine(Generic[DataType], ABC):
+    @abstractmethod
+    def load_tables_to_warehouse(self, metadata: DataType, data: DataType):
+        pass
+
+    @abstractmethod
+    def prepare_postings_table(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def prepare_salaries_table(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def prepare_locations_table(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def prepare_seniorities_table(self, data: DataType) -> DataType:
+        pass
+
+
+class EtlPipeline(Generic[DataType, PipelineInputType]):
+    def __init__(self,
+                 extraction_engine: EtlExtractionEngine[PipelineInputType, DataType],
+                 transofrmation_engine: EtlTransformationEngine[DataType],
+                 loading_engine: EtlLoadingEngine[DataType]):
+
+        self._extraction_engine = extraction_engine
+        self._transformation_engine = transofrmation_engine
+        self._loading_engine = loading_engine
+
+    def run(self, input_: PipelineInputType):
+        metadata, data = self.extract(input_)
+        data = self.transform(data)
+        self.load(metadata, data)
+
+    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
+        return self._extraction_engine.extract(input_)
+
+    def transform(self, data: DataType) -> DataType:
+        data = self._transformation_engine.drop_unwanted(data)
+        data = self._transformation_engine.drop_duplicates(data)
+        data = self._transformation_engine.replace_values(data)
+        data = self._transformation_engine.extract_remote(data)
+        data = self._transformation_engine.extract_locations(data)
+        data = self._transformation_engine.extract_contract_type(data)
+        data = self._transformation_engine.extract_salaries(data)
+        data = self._transformation_engine.unify_missing_values(data)
+        return data
+
+    def load(self, metadata: DataType, data: DataType):
+        self._loading_engine.load_tables_to_warehouse(metadata, data)
+
+
 def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
     ret = (f'{config.protocol_name}://{config.user_name}:{config.password}'
            f'@{config.host_address}/{config.db_name}')
@@ -137,91 +168,100 @@ def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
 
 
 def load_warehouse_db_config(path: Path) -> DataWarehouseDbConfig:
-    with open(path, 'r') as cfg_file:
+    with open(path, 'r', encoding='UTF-8') as cfg_file:
         cfg_dict = yaml.safe_load(cfg_file)
         return DataWarehouseDbConfig(**cfg_dict)
 
 
-class PandasDataWarehouseETL(DataWarehouseETL):
-    def __init__(self, db_config: DataWarehouseDbConfig):
+class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
+    def __init__(self):
+        pass
+
+    def extract(self, input_: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+        json_dict = json.loads(input_)
+        metadata_df = pd.DataFrame(json_dict['metadata'], index=[0])
+        data_df = pd.DataFrame(json_dict['data']['postings'])
+        data_df = data_df.set_index('id')
+        return metadata_df, data_df
+
+
+class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
+    def __init__(self):
         self._geolocator = Geolocator()
+
+    def drop_unwanted(self, data: pd.DataFrame) -> pd.DataFrame:
+        return data.drop(columns=EtlConstants.TO_DROP)
+
+    def drop_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
+        return data[~data.index.duplicated(keep='first')]
+
+    def replace_values(self, data: pd.DataFrame):
+        return data.replace(to_replace=EtlConstants.TO_REPLACE)
+
+    def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:
+        data['remote'] = data['location'].transform(
+            lambda location_dict: location_dict['fullyRemote'])
+        return data
+
+    def extract_locations(self, data: pd.DataFrame) -> pd.DataFrame:
+        data['city'] = data['location'].transform(
+            lambda location_dict: [self._geolocator(loc['city'])
+                                   for loc in location_dict['places']])
+        return data
+
+    def extract_contract_type(self, data: pd.DataFrame) -> pd.DataFrame:
+        data['contract_type'] = data['salary'].transform(
+            lambda salary_dict: salary_dict['type'])
+        return data
+
+    def extract_salaries(self, data: pd.DataFrame) -> pd.DataFrame:
+        data['salary_min'] = data['salary'].transform(
+            lambda salary_dict: salary_dict['from'])
+        data['salary_max'] = data['salary'].transform(
+            lambda salary_dict: salary_dict['to'])
+        data['salary_mean'] = data[['salary_max', 'salary_min']].mean(axis=1)
+        return data
+
+    def unify_missing_values(self, data) -> pd.DataFrame:
+        return data.replace('', None)
+
+
+class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
+    def __init__(self, db_config: DataWarehouseDbConfig):
         self._db_con = db.create_engine(make_db_uri_from_config(db_config))
 
-    def set_data(self, postings_data_dict: Dict[str, Any]):
-        self._df = pd.DataFrame.from_dict(
-            postings_data_dict['data']['postings'])
-        self._df.set_index('id', inplace=True)
+    def load_tables_to_warehouse(self, 
+                                 metadata: pd.DataFrame,
+                                 data: pd.DataFrame):
 
-    def drop_unwanted(self):
-        self._df.drop(columns=DataWarehouseETL.TO_DROP, inplace=True)
+        metadata.to_sql('metadata', con=self._db_con, if_exists='replace')
 
-    def drop_duplicates(self):
-        self._df = self._df[~self._df.index.duplicated(keep='first')]
-
-    def replace_values(self):
-        self._df.replace(to_replace=DataWarehouseETL.TO_REPLACE, inplace=True)
-
-    def extract_remote(self):
-        self._df['remote'] = self._df['location'].transform(
-            lambda location_dict: location_dict['fullyRemote'])
-
-    def extract_locations(self):
-        self._df['city'] = self._df['location'].transform(
-            lambda loc_dict: [self._geolocator(loc['city'])
-                              for loc in loc_dict['places']])
-
-    def extract_contract_type(self):
-        self._df['contract_type'] = self._df['salary'].transform(
-            lambda salary_dict: salary_dict['type'])
-
-    def extract_salaries(self):
-        self._df['salary_min'] = self._df['salary'].transform(
-            lambda salary_dict: salary_dict['from'])
-        self._df['salary_max'] = self._df['salary'].transform(
-            lambda salary_dict: salary_dict['to'])
-        self._df['salary_mean'] = self._df[[
-            'salary_max', 'salary_min']].mean(axis=1)
-    
-    def unify_missing_values(self):
-        self._df.replace('', None, inplace=True)
-
-    def get_processed_data_table(self):
-        return self._df
-
-    def get_postings_table(self):
-        postings_df = self._df[DataWarehouseETL.POSTINGS_TABLE_COLS]
-        return postings_df
-
-    def get_salaries_table(self):
-        salaries_df = self._df[DataWarehouseETL.SALARIES_TABLE_COLS]
-        return salaries_df
-
-    def get_locations_table(self):
-        locations_df = self._df.explode('city')
-        locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
-            lambda city: pd.Series([city[0], city[1], city[2]]))
-        locations_df = locations_df[DataWarehouseETL.LOCATIONS_TABLE_COLS]
-        locations_df.dropna(inplace=True)
-        return locations_df
-
-    def get_seniorities_table(self):
-        seniority_df = self._df.explode('seniority')
-        seniority_df = seniority_df[DataWarehouseETL.SENIORITY_TABLE_COLS]
-        return seniority_df
-
-    def load_postings_table_to_db(self):
-        postings_df = self.get_postings_table()
+        postings_df = self.prepare_postings_table(data)
         postings_df.to_sql('postings', con=self._db_con, if_exists='replace')
 
-    def load_salaries_table_to_db(self):
-        salaries_df = self.get_salaries_table()
+        salaries_df = self.prepare_salaries_table(data)
         salaries_df.to_sql('salaries', con=self._db_con, if_exists='replace')
 
-    def load_locations_table_to_db(self):
-        location_df = self.get_locations_table()
+        location_df = self.prepare_locations_table(data)
         location_df.to_sql('locations', con=self._db_con, if_exists='replace')
 
-    def load_seniorities_table_to_db(self):
-        seniority_df = self.get_seniorities_table()
-        seniority_df.to_sql('seniorities', con=self._db_con,
-                            if_exists='replace')
+        seniority_df = self.prepare_seniorities_table(data)
+        seniority_df.to_sql('seniorities', con=self._db_con, if_exists='replace')
+
+    def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        return data[EtlConstants.POSTINGS_TABLE_COLS]
+
+    def prepare_salaries_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        return data[EtlConstants.SALARIES_TABLE_COLS]
+
+    def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        locations_df = data.explode('city')
+        locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
+            lambda city: pd.Series([city[0], city[1], city[2]]))
+        locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
+        return locations_df.dropna()
+
+    def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        seniority_df = data.explode('seniority')
+        return seniority_df[EtlConstants.SENIORITY_TABLE_COLS]
+ 
