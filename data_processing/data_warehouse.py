@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
+import dataclasses
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, TypeVar
 
-import json
 import yaml
 import pandas as pd
 import sqlalchemy as db
 
+from .data_formats import NoFluffJObsPostingsData
 from .geolocator import Geolocator
 
 
@@ -178,11 +179,27 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
         pass
 
     def extract(self, input_: str) -> tuple[pd.DataFrame, pd.DataFrame]:
-        json_dict = json.loads(input_)
-        metadata_df = pd.DataFrame(json_dict['metadata'], index=[0])
-        data_df = pd.DataFrame(json_dict['data']['postings'])
+        data = NoFluffJObsPostingsData.from_json_str(input_)
+        self.validate_nofluffjobs_data(data)
+        metadata_df = pd.DataFrame(dataclasses.asdict(data.metadata), index=[0])
+        data_df = pd.DataFrame(data.raw_data['postings'])
         data_df = data_df.set_index('id')
         return metadata_df, data_df
+
+
+    @staticmethod
+    def validate_nofluffjobs_data(data: NoFluffJObsPostingsData):
+        if data.metadata.source_name != 'nofluffjobs':
+            raise ValueError(
+                'Data extractor got correct data format type, but the '
+                'metadata indicates invlaid data source; expected: '
+                f'"nofluffjobs", got: {data.metadata.source_name}')
+        try:
+            assert data.raw_data['totalCount'] == len(data.raw_data['postings'])
+        except KeyError as error:
+            raise ValueError(
+                    'Data extractor got correct data format type and'
+                    'metadata, but "raw_data" was malformed') from error
 
 
 class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
@@ -230,7 +247,7 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     def __init__(self, db_config: DataWarehouseDbConfig):
         self._db_con = db.create_engine(make_db_uri_from_config(db_config))
 
-    def load_tables_to_warehouse(self, 
+    def load_tables_to_warehouse(self,
                                  metadata: pd.DataFrame,
                                  data: pd.DataFrame):
 
@@ -264,4 +281,3 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
         seniority_df = data.explode('seniority')
         return seniority_df[EtlConstants.SENIORITY_TABLE_COLS]
- 

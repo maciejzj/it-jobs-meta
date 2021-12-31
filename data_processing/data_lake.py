@@ -1,6 +1,5 @@
 """Raw data storage for job offer postings scrapped from the web."""
 
-import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
