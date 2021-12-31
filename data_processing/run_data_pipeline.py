@@ -24,7 +24,7 @@ def make_data_source() -> PostingsDataSource:
 
 def make_data_lake() -> DataLake:
     data_lake_config = load_data_lake_db_config(
-        Path('data_processing/data_lake_db_config.yaml'))
+        Path('data_processing/config/data_lake_db_config.yaml'))
     data_lake = RedisDataLake(data_lake_config)
     return data_lake
 
@@ -33,7 +33,7 @@ def make_data_warehouse_etl():
     extracor = PandasEtlExtractionFromJsonStr()
     transformer = PandasEtlTransformationEngine()
     loader = PandasEtlSqlLoadingEngine(load_warehouse_db_config(
-        Path('data_processing/warehouse_db_config.yaml')))
+        Path('data_processing/config/warehouse_db_config.yaml')))
     data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
     return data_warehouse_etl
 

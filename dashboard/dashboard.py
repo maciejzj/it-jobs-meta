@@ -27,7 +27,7 @@ from .dashboard_components import (
 
 def gather_data():
     db_config = load_warehouse_db_config(
-        Path('data_processing/warehouse_db_config.yaml'))
+        Path('data_processing/config/warehouse_db_config.yaml'))
     db_con = db.create_engine(make_db_uri_from_config(db_config))
 
     ret = {}
