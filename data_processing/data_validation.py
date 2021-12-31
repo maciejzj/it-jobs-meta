@@ -8,7 +8,7 @@ class PostingsSchema(pa.SchemaModel):
     id: pt.Series[str] = pa.Field(unique=True)
     name: pt.Series[str] = pa.Field(nullable=True)
     posted:  pt.Series[datetime] = pa.Field(coerce=True, nullable=True)
-    title: pt.Series[str] = pa.Field(nullable=True) 
+    title: pt.Series[str] = pa.Field(nullable=True)
     technology: pt.Series[str] = pa.Field(nullable=True)
     category: pt.Series[str] = pa.Field(nullable=True)
     url: pt.Series[str] = pa.Field(nullable=True)
@@ -20,7 +20,7 @@ class SalariesSchema(pa.SchemaModel):
     salary_min: pt.Series[float] = pa.Field(coerce=True, ge=0)
     salary_max: pt.Series[float] = pa.Field(coerce=True, ge=0)
     salary_mean: pt.Series[float] = pa.Field(coerce=True, ge=0)
-   
+
 
 class LocationsSchema(pa.SchemaModel):
     id: pt.Series[str] = pa.Field()
