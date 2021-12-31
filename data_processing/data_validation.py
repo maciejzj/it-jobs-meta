@@ -14,6 +14,7 @@ class PostingsSchema(pa.SchemaModel):
     url: pt.Series[str] = pa.Field(nullable=True)
     remote: pt.Series[bool] = pa.Field(coerce=True)
 
+
 class SalariesSchema(pa.SchemaModel):
     id: pt.Series[str] = pa.Field(unique=True)
     contract_type: pt.Series[str] = pa.Field()
