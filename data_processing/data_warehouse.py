@@ -6,9 +6,15 @@ from typing import Generic, TypeVar
 
 import yaml
 import pandas as pd
+import pandera as pa
 import sqlalchemy as db
 
 from .data_formats import NoFluffJObsPostingsData
+from .data_validation import (
+    PostingsSchema, 
+    SalariesSchema, 
+    LocationsSchema,
+    SenioritiesSchema)
 from .geolocator import Geolocator
 
 
@@ -265,19 +271,27 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         seniority_df = self.prepare_seniorities_table(data)
         seniority_df.to_sql('seniorities', con=self._db_con, if_exists='replace')
 
-    def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
-        return data[EtlConstants.POSTINGS_TABLE_COLS]
+    @pa.check_types
+    def prepare_postings_table(
+            self, data: pd.DataFrame) -> pa.typing.DataFrame[PostingsSchema]:
+        return data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
 
-    def prepare_salaries_table(self, data: pd.DataFrame) -> pd.DataFrame:
-        return data[EtlConstants.SALARIES_TABLE_COLS]
+    @pa.check_types
+    def prepare_salaries_table(
+            self, data: pd.DataFrame) -> pa.typing.DataFrame[SalariesSchema]:
+        return data[EtlConstants.SALARIES_TABLE_COLS].reset_index()
 
-    def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
+    @pa.check_types
+    def prepare_locations_table(
+            self, data: pd.DataFrame) -> pa.typing.DataFrame[LocationsSchema]:
         locations_df = data.explode('city')
         locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
             lambda city: pd.Series([city[0], city[1], city[2]]))
         locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
-        return locations_df.dropna()
+        return locations_df.dropna().reset_index()
 
-    def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
+    @pa.check_types
+    def prepare_seniorities_table(
+            self, data: pd.DataFrame) -> pa.typing.DataFrame[SenioritiesSchema]:
         seniority_df = data.explode('seniority')
-        return seniority_df[EtlConstants.SENIORITY_TABLE_COLS]
+        return seniority_df[EtlConstants.SENIORITY_TABLE_COLS].reset_index()
