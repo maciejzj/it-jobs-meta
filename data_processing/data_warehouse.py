@@ -36,6 +36,11 @@ class EtlConstants:
         'angular': 'javascript',
         'react': 'javascript'}
 
+    TO_CAPITLIZE = [
+        'technology',
+        'category'
+    ]
+
     POSTINGS_TABLE_COLS = [
         'name',
         'posted',
@@ -90,6 +95,10 @@ class EtlTransformationEngine(Generic[DataType], ABC):
 
     @abstractmethod
     def replace_values(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def capitalize(self, data: DataType) -> DataType:
         pass
 
     @abstractmethod
@@ -156,6 +165,7 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
     def transform(self, data: DataType) -> DataType:
         data = self._transformation_engine.drop_unwanted(data)
         data = self._transformation_engine.drop_duplicates(data)
+        data = self._transformation_engine.capitalize(data)
         data = self._transformation_engine.replace_values(data)
         data = self._transformation_engine.extract_remote(data)
         data = self._transformation_engine.extract_locations(data)
@@ -220,6 +230,11 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
 
     def replace_values(self, data: pd.DataFrame):
         return data.replace(to_replace=EtlConstants.TO_REPLACE)
+
+    def capitalize(self, data: DataType) -> DataType:
+        for column_name in EtlConstants.TO_CAPITLIZE:
+            data[column_name] = data[column_name].str.capitalize()
+        return data
 
     def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:
         data['remote'] = data['location'].transform(
