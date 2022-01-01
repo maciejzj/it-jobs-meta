@@ -1,36 +1,40 @@
+from dataclasses import dataclass
 from datetime import datetime
 
 import pandera as pa
-from pandera import typing as pt
 
 
-class PostingsSchema(pa.SchemaModel):
-    id: pt.Series[str] = pa.Field(unique=True)
-    name: pt.Series[str] = pa.Field(nullable=True)
-    posted:  pt.Series[datetime] = pa.Field(coerce=True, nullable=True)
-    title: pt.Series[str] = pa.Field(nullable=True)
-    technology: pt.Series[str] = pa.Field(nullable=True)
-    category: pt.Series[str] = pa.Field(nullable=True)
-    url: pt.Series[str] = pa.Field(nullable=True)
-    remote: pt.Series[bool] = pa.Field(coerce=True)
+@dataclass
+class Schemas:
+    postings = pa.DataFrameSchema({
+        'id': pa.Column(str, unique=True),
+        'name': pa.Column(str, nullable=True),
+        'posted': pa.Column(datetime, coerce=True, nullable=True),
+        'title': pa.Column(str, nullable=True),
+        'technology': pa.Column(str, nullable=True),
+        'category': pa.Column(str, nullable=True),
+        'url': pa.Column(str, nullable=True),
+        'remote': pa.Column(bool, coerce=True)
+    })
 
+    salaries = pa.DataFrameSchema({
+        'id': pa.Column(str, unique=True),
+        'contract_type': pa.Column(str),
+        'salary_min': pa.Column(float, pa.Check.ge(0), coerce=True),
+        'salary_max': pa.Column(float, pa.Check.ge(0), coerce=True),
+        'salary_mean': pa.Column(float, pa.Check.ge(0), coerce=True)
+    })
 
-class SalariesSchema(pa.SchemaModel):
-    id: pt.Series[str] = pa.Field(unique=True)
-    contract_type: pt.Series[str] = pa.Field()
-    salary_min: pt.Series[float] = pa.Field(coerce=True, ge=0)
-    salary_max: pt.Series[float] = pa.Field(coerce=True, ge=0)
-    salary_mean: pt.Series[float] = pa.Field(coerce=True, ge=0)
+    locations = pa.DataFrameSchema({
+        'id': pa.Column(str),
+        'city': pa.Column(str),
+        'lat': pa.Column(
+            float, pa.Check.ge(-90), pa.Check.le(90), coerce=True),
+        'lon': pa.Column(
+            float, pa.Check.ge(-180), pa.Check.le(180), coerce=True),
+    })
 
-
-class LocationsSchema(pa.SchemaModel):
-    id: pt.Series[str] = pa.Field()
-    city: pt.Series[str] = pa.Field()
-    lat: pt.Series[float] = pa.Field(coerce=True, ge=-90, le=90)
-    lon: pt.Series[float] = pa.Field(coerce=True, ge=-180, le=180)
-
-
-class SenioritiesSchema(pa.SchemaModel):
-    id: pt.Series[str] = pa.Field()
-    seniority: pt.Series[str] = pa.Field(
-        isin=('Trainee', 'Junior', 'Mid', 'Senior', 'Expert'))
+    seniorities = pa.DataFrameSchema({
+        'id': pa.Column(str),
+        'seniority': pa.Column(str)
+    })

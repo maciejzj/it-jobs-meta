@@ -3,19 +3,14 @@ import dataclasses
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, Optional, TypeVar
+from typing import Generic, TypeVar
 
 import yaml
 import pandas as pd
-import pandera as pa
 import sqlalchemy as db
 
 from .data_formats import NoFluffJObsPostingsData
-from .data_validation import (
-    PostingsSchema, 
-    SalariesSchema, 
-    LocationsSchema,
-    SenioritiesSchema)
+from .data_validation import Schemas
 from .geolocator import Geolocator
 
 
@@ -30,12 +25,14 @@ class EtlConstants:
         'highlighted',
         'onlineInterviewAvailable',
         'referralBonus',
-        'referralBonusCurrency']
+        'referralBonusCurrency'
+    ]
 
     VALS_TO_REPLACE = {
         'node.js': 'node',
         'angular': 'javascript',
-        'react': 'javascript'}
+        'react': 'javascript'
+    }
 
     COLS_TO_TITLE_CASE = [
         'category'
@@ -49,7 +46,7 @@ class EtlConstants:
         '.net': '.Net',
         'aws': 'AWS',
         'ios': 'iOS',
-        'javascript': 'JavaScipt',
+        'javascript': 'JavaScript',
         'sql': 'SQL',
     }
 
@@ -60,7 +57,8 @@ class EtlConstants:
         'technology',
         'category',
         'url',
-        'remote']
+        'remote'
+    ]
 
     SALARIES_TABLE_COLS = [
         'contract_type',
@@ -245,16 +243,16 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def drop_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
         return data[~data.index.duplicated(keep='first')]
 
-    def replace_values(self, data: pd.DataFrame):
+    def replace_values(self, data: pd.DataFrame) -> pd.DataFrame:
         return data.replace(to_replace=EtlConstants.VALS_TO_REPLACE)
 
-    def to_title_case(self, data: DataType) -> DataType:
+    def to_title_case(self, data: pd.DataFrame) -> pd.DataFrame:
         for col in EtlConstants.COLS_TO_TITLE_CASE:
             data[col] = data[col][data[col].notna()].transform(
                 lambda s: re.sub(r'([A-Z])', r' \1', s).title())
         return data
-    
-    def to_capitalized(self, data: DataType) -> DataType:
+
+    def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
         specials = EtlConstants.CAPITALIZE_SPECIAL_NAMES
         for col in EtlConstants.COLS_TO_CAPITALIZE:
             data[col] = data[col][data[col].notna()].transform(
@@ -311,27 +309,23 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         seniority_df = self.prepare_seniorities_table(data)
         seniority_df.to_sql('seniorities', con=self._db_con, if_exists='replace')
 
-    @pa.check_types
-    def prepare_postings_table(
-            self, data: pd.DataFrame) -> pa.typing.DataFrame[PostingsSchema]:
-        return data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
+    def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        postings_df = data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
+        return Schemas.postings.validate(postings_df)
 
-    @pa.check_types
-    def prepare_salaries_table(
-            self, data: pd.DataFrame) -> pa.typing.DataFrame[SalariesSchema]:
-        return data[EtlConstants.SALARIES_TABLE_COLS].reset_index()
+    def prepare_salaries_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        salaries_df = data[EtlConstants.SALARIES_TABLE_COLS].reset_index()
+        return Schemas.salaries.validate(salaries_df)
 
-    @pa.check_types
-    def prepare_locations_table(
-            self, data: pd.DataFrame) -> pa.typing.DataFrame[LocationsSchema]:
+    def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
         locations_df = data.explode('city')
         locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
             lambda city: pd.Series([city[0], city[1], city[2]]))
         locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
-        return locations_df.dropna().reset_index()
+        locations_df = locations_df.dropna().reset_index()
+        return Schemas.locations.validate(locations_df)
 
-    @pa.check_types
-    def prepare_seniorities_table(
-            self, data: pd.DataFrame) -> pa.typing.DataFrame[SenioritiesSchema]:
+    def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
         seniority_df = data.explode('seniority')
-        return seniority_df[EtlConstants.SENIORITY_TABLE_COLS].reset_index()
+        seniority_df = seniority_df[EtlConstants.SENIORITY_TABLE_COLS].reset_index()
+        return Schemas.seniorities.validate(seniority_df)
