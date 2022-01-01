@@ -1,8 +1,9 @@
-from abc import ABC, abstractmethod
+import re
 import dataclasses
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Generic, TypeVar
+from typing import Generic, Optional, TypeVar
 
 import yaml
 import pandas as pd
@@ -20,7 +21,7 @@ from .geolocator import Geolocator
 
 @dataclass
 class EtlConstants:
-    TO_DROP = [
+    COLS_TO_DROP = [
         'renewed',
         'logo',
         'regions',
@@ -31,15 +32,26 @@ class EtlConstants:
         'referralBonus',
         'referralBonusCurrency']
 
-    TO_REPLACE = {
+    VALS_TO_REPLACE = {
         'node.js': 'node',
         'angular': 'javascript',
         'react': 'javascript'}
 
-    TO_CAPITLIZE = [
-        'technology',
+    COLS_TO_TITLE_CASE = [
         'category'
     ]
+
+    COLS_TO_CAPITALIZE = [
+        'technology'
+    ]
+
+    CAPITALIZE_SPECIAL_NAMES = {
+        '.net': '.Net',
+        'aws': 'AWS',
+        'ios': 'iOS',
+        'javascript': 'JavaScipt',
+        'sql': 'SQL',
+    }
 
     POSTINGS_TABLE_COLS = [
         'name',
@@ -98,7 +110,11 @@ class EtlTransformationEngine(Generic[DataType], ABC):
         pass
 
     @abstractmethod
-    def capitalize(self, data: DataType) -> DataType:
+    def to_title_case(self, data: DataType) -> DataType:
+        pass
+
+    @abstractmethod
+    def to_capitalized(self, data: DataType) -> DataType:
         pass
 
     @abstractmethod
@@ -165,7 +181,8 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
     def transform(self, data: DataType) -> DataType:
         data = self._transformation_engine.drop_unwanted(data)
         data = self._transformation_engine.drop_duplicates(data)
-        data = self._transformation_engine.capitalize(data)
+        data = self._transformation_engine.to_title_case(data)
+        data = self._transformation_engine.to_capitalized(data)
         data = self._transformation_engine.replace_values(data)
         data = self._transformation_engine.extract_remote(data)
         data = self._transformation_engine.extract_locations(data)
@@ -223,17 +240,25 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         self._geolocator = Geolocator()
 
     def drop_unwanted(self, data: pd.DataFrame) -> pd.DataFrame:
-        return data.drop(columns=EtlConstants.TO_DROP)
+        return data.drop(columns=EtlConstants.COLS_TO_DROP)
 
     def drop_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
         return data[~data.index.duplicated(keep='first')]
 
     def replace_values(self, data: pd.DataFrame):
-        return data.replace(to_replace=EtlConstants.TO_REPLACE)
+        return data.replace(to_replace=EtlConstants.VALS_TO_REPLACE)
 
-    def capitalize(self, data: DataType) -> DataType:
-        for column_name in EtlConstants.TO_CAPITLIZE:
-            data[column_name] = data[column_name].str.capitalize()
+    def to_title_case(self, data: DataType) -> DataType:
+        for col in EtlConstants.COLS_TO_TITLE_CASE:
+            data[col] = data[col][data[col].notna()].transform(
+                lambda s: re.sub(r'([A-Z])', r' \1', s).title())
+        return data
+    
+    def to_capitalized(self, data: DataType) -> DataType:
+        specials = EtlConstants.CAPITALIZE_SPECIAL_NAMES
+        for col in EtlConstants.COLS_TO_CAPITALIZE:
+            data[col] = data[col][data[col].notna()].transform(
+                lambda s: specials[s] if s in specials else s.capitalize())
         return data
 
     def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:
