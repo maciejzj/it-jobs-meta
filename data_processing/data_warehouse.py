@@ -179,9 +179,9 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
     def transform(self, data: DataType) -> DataType:
         data = self._transformation_engine.drop_unwanted(data)
         data = self._transformation_engine.drop_duplicates(data)
+        data = self._transformation_engine.replace_values(data)
         data = self._transformation_engine.to_title_case(data)
         data = self._transformation_engine.to_capitalized(data)
-        data = self._transformation_engine.replace_values(data)
         data = self._transformation_engine.extract_remote(data)
         data = self._transformation_engine.extract_locations(data)
         data = self._transformation_engine.extract_contract_type(data)
