@@ -39,7 +39,8 @@ class EtlConstants:
     ]
 
     COLS_TO_CAPITALIZE = [
-        'technology'
+        'technology',
+        'contract_type'
     ]
 
     CAPITALIZE_SPECIAL_NAMES = {
@@ -47,7 +48,9 @@ class EtlConstants:
         'aws': 'AWS',
         'ios': 'iOS',
         'javascript': 'JavaScript',
+        'php': 'PHP',
         'sql': 'SQL',
+        'b2b': 'B2B'
     }
 
     POSTINGS_TABLE_COLS = [
@@ -179,13 +182,13 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
     def transform(self, data: DataType) -> DataType:
         data = self._transformation_engine.drop_unwanted(data)
         data = self._transformation_engine.drop_duplicates(data)
-        data = self._transformation_engine.replace_values(data)
-        data = self._transformation_engine.to_title_case(data)
-        data = self._transformation_engine.to_capitalized(data)
         data = self._transformation_engine.extract_remote(data)
         data = self._transformation_engine.extract_locations(data)
         data = self._transformation_engine.extract_contract_type(data)
         data = self._transformation_engine.extract_salaries(data)
+        data = self._transformation_engine.replace_values(data)
+        data = self._transformation_engine.to_title_case(data)
+        data = self._transformation_engine.to_capitalized(data)
         data = self._transformation_engine.unify_missing_values(data)
         return data
 
@@ -284,7 +287,11 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         return data
 
     def unify_missing_values(self, data) -> pd.DataFrame:
-        return data.replace('', None)
+        data = data.replace('', None)
+        data = data.replace('NaN', None)
+        data = data.replace('Nan', None)
+        data = data.replace('nan', None)
+        return data
 
 
 class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
