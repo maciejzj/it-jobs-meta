@@ -1,0 +1,5 @@
+protocol_name: 'mysql+pymysql'
+user_name: 'it_jobs_meta_worker'
+password: 'userpass'
+host_address: '192.168.64.4'
+db_name: 'it_jobs_meta_datawarehouse'

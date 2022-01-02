@@ -151,18 +151,18 @@ class ContractTypeViolinChart:
             tech_n_largest)]
         limited_salary = tech_n_largest_df[~(
             tech_n_largest_df['salary_mean'] > ContractTypeViolinChart.MAX_SALARY)]
-        b2b_df = limited_salary[limited_salary['contract_type'] == 'b2b']
+        b2b_df = limited_salary[limited_salary['contract_type'] == 'B2B']
         perm_df = limited_salary[limited_salary['contract_type']
-                                 == 'permanent']
+                                 == 'Permanent']
 
         fig = go.Figure()
         fig.add_trace(go.Violin(x=b2b_df['technology'],
                                 y=b2b_df['salary_mean'],
-                                legendgroup='b2b', scalegroup='b2b', name='b2b',
+                                legendgroup='B2B', scalegroup='B2B', name='B2B',
                                 side='negative', points=False))
         fig.add_trace(go.Violin(x=perm_df['technology'],
                                 y=perm_df['salary_mean'],
-                                legendgroup='permanent', scalegroup='permanent', name='permanent',
+                                legendgroup='Permanent', scalegroup='Permanent', name='Permanent',
                                 side='positive', points=False))
         fig.update_traces(meanline_visible=True)
         fig.update_layout(violingap=0, violinmode='overlay')
