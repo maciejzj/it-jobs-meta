@@ -13,7 +13,7 @@ from data_processing.data_warehouse import (
 
 from .dashboard_components import (
     RemotePieChart,
-    SalariesMapChart,
+    SalariesMap,
     SalariesSenioritiesMapChart,
     SenioritiesHistogram,
     TechnologiesPieChart,
@@ -22,6 +22,9 @@ from .dashboard_components import (
     CategoriesTechnologiesSankeyChart,
     ContractTypeViolinChart,
     TechnologiesViolinChart,
+    SalariesMapJunior,
+    SalariesMapMid,
+    SalariesMapSenior
 )
 
 
@@ -50,11 +53,8 @@ def make_graphs(data):
         'cat_tech_sankey_chart':
             dcc.Graph(figure=CategoriesTechnologiesSankeyChart.make_fig(
                 data['postings'])),
-        'salaries_map': dcc.Graph(figure=SalariesMapChart.make_fig(
+        'salaries_map': dcc.Graph(figure=SalariesMap.make_fig(
             data['locations'], data['salaries'])),
-        'salaries_seniorities_map':
-            dcc.Graph(figure=SalariesSenioritiesMapChart.make_fig(
-                data['locations'], data['salaries'], data['seniorities'])),
         'seniorities_histogram':
             dcc.Graph(figure=SenioritiesHistogram.make_fig(
                 data['seniorities'], data['salaries'])),
@@ -63,7 +63,16 @@ def make_graphs(data):
                 data['postings'], data['salaries'], data['seniorities'])),
         'contract_type_violin_plot':
             dcc.Graph(figure=ContractTypeViolinChart.make_fig(
-                data['postings'], data['salaries']))
+                data['postings'], data['salaries'])),
+        'salaries_map_junior':
+            dcc.Graph(figure=SalariesMapJunior.make_fig(
+                data['locations'], data['salaries'], data['seniorities'])),
+        'salaries_map_mid':
+            dcc.Graph(figure=SalariesMapMid.make_fig(
+                data['locations'], data['salaries'], data['seniorities'])),
+        'salaries_map_senior':
+            dcc.Graph(figure=SalariesMapSenior.make_fig(
+                data['locations'], data['salaries'], data['seniorities'])),
     }
     return graphs
 
@@ -76,7 +85,7 @@ def make_layout():
         dbc.NavbarSimple(
             dbc.NavLink(
                 dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
-                           color='dark'), active=True),
+                           color='dark'), active=True, className='mr-0'),
             brand='It Jobs Meta', className='bg-white'),
 
         dbc.Container([
@@ -94,7 +103,10 @@ def make_layout():
                         dbc.Button('To the data', outline=True,
                                    active=True, color='light')
                     ], className='p-5 text-white bg-dark rounded shadow-lg',
-                    ), md=6, className='mt-5')
+                    ),
+                    md=6,
+                    className='mt-5',
+                   )
             ]),
 
             dbc.Container([
@@ -142,8 +154,14 @@ def make_layout():
                 dbc.Col(dbc.Card(graphs['salaries_map'],
                     className='mt-4 p-1 border-0 rounded shadow'), md=6),
             ], align='center'),
-            dbc.Card(graphs['salaries_seniorities_map'],
-                     className='mt-4 p-1 border-0 rounded shadow'),
+            dbc.Row([
+                dbc.Col(dbc.Card(graphs['salaries_map_junior'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=4),
+                dbc.Col(dbc.Card(graphs['salaries_map_mid'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=4),
+                dbc.Col(dbc.Card(graphs['salaries_map_senior'],
+                        className='mt-4 p-1 border-0 rounded shadow'), md=4),
+            ], align='center'),
 
             html.H3('Salaries breakdown', className='mt-4'),
             dbc.Card(graphs['technologies_violin_plot'],
