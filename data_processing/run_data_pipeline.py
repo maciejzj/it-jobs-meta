@@ -1,6 +1,7 @@
-from pathlib import Path
 import logging
 import sys
+from pathlib import Path
+from typing import Any, Dict
 
 from .data_ingestion import (
     PostingsDataSource,
@@ -22,24 +23,25 @@ def make_data_source() -> PostingsDataSource:
     return data_source
 
 
-def make_data_lake() -> DataLake:
-    data_lake_config = load_data_lake_db_config(
-        Path('data_processing/config/data_lake_db_config.yaml'))
+def make_data_lake(data_lake_config_path: Path) -> DataLake:
+    data_lake_config = load_data_lake_db_config(data_lake_config_path)
     data_lake = RedisDataLake(data_lake_config)
     return data_lake
 
 
-def make_data_warehouse_etl():
+def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
     extracor = PandasEtlExtractionFromJsonStr()
     transformer = PandasEtlTransformationEngine()
-    loader = PandasEtlSqlLoadingEngine(load_warehouse_db_config(
-        Path('data_processing/config/warehouse_db_config.yaml')))
+    loader = PandasEtlSqlLoadingEngine(
+        load_warehouse_db_config(data_warehouse_config_path))
     data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
     return data_warehouse_etl
 
 
-def run_ingest_data(data_source: PostingsDataSource,
-                    data_lake: DataLake):
+def run_ingest_data(
+        data_source: PostingsDataSource, data_lake: DataLake
+    ) -> Dict[str, Any]:
+
     data = data_source.get()
     data_key = data.make_key_for_data()
     json_data_string = data.make_json_str_from_data()
@@ -62,17 +64,22 @@ def setup_logging():
 
 def main():
     try:
+        data_lake_config_path = Path(
+            'data_processing/config/data_lake_db_config.yaml')
+        dat_warehouse_config_path = Path(
+            'data_processing/config/warehouse_db_config.yaml')
+
         setup_logging()
         logging.info('Started data pipeline')
 
         logging.info('Attempting to perform data ingestion step')
         data_source = make_data_source()
-        data_lake = make_data_lake()
+        data_lake = make_data_lake(data_lake_config_path)
         data = run_ingest_data(data_source, data_lake)
         logging.info('Data ingestion succeeded')
 
         logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = make_data_warehouse_etl()
+        data_warehouse_etl = make_data_warehouse_etl(dat_warehouse_config_path)
         run_warehouse_data(data, data_warehouse_etl)
         logging.info('Data warehousing succeeded')
 

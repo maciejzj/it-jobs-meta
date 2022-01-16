@@ -185,7 +185,7 @@ class SalariesMapFilteredBySeniority:
         return SalariesMap.make_fig(loc_sen_df, salaries_df)
     
 class SalariesMapJunior:
-    TITLE = 'Mean salary by location for Juniors'
+    TITLE = 'Mean salary for Juniors'
 
     @classmethod
     def make_fig(
@@ -204,7 +204,7 @@ class SalariesMapJunior:
 
 
 class SalariesMapMid:
-    TITLE = 'Mean salary by location for Mids'
+    TITLE = 'Mean salary for Mids'
 
     @classmethod
     def make_fig(
@@ -223,7 +223,7 @@ class SalariesMapMid:
         
 
 class SalariesMapSenior:
-    TITLE = 'Mean salary by location for Seniors'
+    TITLE = 'Mean salary for Seniors'
 
     @classmethod
     def make_fig(
