@@ -450,7 +450,7 @@ def make_dash_app() -> dash.Dash:
     return app
 
 
-if __name__ == '__main__':
+def main():
     data_warehouse_config_path = Path(
         'data_processing/config/warehouse_db_config.yaml'
     )
@@ -460,3 +460,7 @@ if __name__ == '__main__':
     app = make_dash_app()
     app.layout = make_layout(dynamic_content)
     app.run_server(debug=True, host='0.0.0.0')
+
+
+if __name__ == '__main__':
+    main()
