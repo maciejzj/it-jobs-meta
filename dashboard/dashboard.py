@@ -2,20 +2,20 @@ from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum, auto
 from pathlib import Path
-from typing import Dict
 
 import dash
 import dash_bootstrap_components as dbc
-from flask import g
 import pandas as pd
 import sqlalchemy as db
 from dash import dcc
 from dash import html
+from dash.development import base_component as DashComponent
 from plotly import graph_objects as go
 
 from data_processing.data_warehouse import (
     make_db_uri_from_config,
-    load_warehouse_db_config)
+    load_warehouse_db_config,
+)
 
 from .dashboard_components import (
     CategoriesPieChart,
@@ -29,10 +29,9 @@ from .dashboard_components import (
     SalariesMapMid,
     SalariesMapSenior,
     TechnologiesViolinChart,
-    ContractTypeViolinChart)
+    ContractTypeViolinChart,
+)
 
-
-DashComponent = dash.development.base_component.Component
 
 class TableNames(Enum):
     METADATA = 'metadata'
@@ -56,10 +55,12 @@ class Graphs(Enum):
     SALARIES_MAP_MID = auto()
     SALARIES_MAP_SENIOR = auto()
 
+
 @dataclass
 class DynamicContent:
     obtained_datetime: datetime
-    graphs: Dict[Graphs, go.Figure]
+    graphs: dict[Graphs, go.Figure]
+
 
 @dataclass
 class DashboardTextualComponents:
@@ -81,7 +82,10 @@ class DashboardTextualComponents:
     exploring the data!
     '''
 
-def gather_data(data_warehouse_config_path: Path) -> Dict[TableNames, pd.DataFrame]:
+
+def gather_data(
+    data_warehouse_config_path: Path,
+) -> dict[TableNames, pd.DataFrame]:
     db_config = load_warehouse_db_config(data_warehouse_config_path)
     db_con = db.create_engine(make_db_uri_from_config(db_config))
 
@@ -91,174 +95,340 @@ def gather_data(data_warehouse_config_path: Path) -> Dict[TableNames, pd.DataFra
     return data_tables
 
 
-def make_graphs(data: Dict[TableNames, pd.DataFrame]) -> Dict[Graphs, go.Figure]:
+def make_graphs(
+    data: dict[TableNames, pd.DataFrame]
+) -> dict[Graphs, go.Figure]:
     graphs = {
-        Graphs.CATEGORIES_PIE_CHART:
-            dcc.Graph(figure=CategoriesPieChart.make_fig(
-                data[TableNames.POSTINGS])),
-        Graphs.TECHNOLOGIES_PIE_CHART:
-            dcc.Graph(figure=TechnologiesPieChart.make_fig(
-                data[TableNames.POSTINGS])),
-        Graphs.CAT_TECH_SANKEY_CHART:
-            dcc.Graph(figure=CategoriesTechnologiesSankeyChart.make_fig(
-                data[TableNames.POSTINGS])),
-        Graphs.SENIORITY_PIE_CHART:
-            dcc.Graph(figure=SeniorityPieChart.make_fig(
-                data[TableNames.SENIORITIES])),
-        Graphs.SENIORITIES_HISTOGRAM:
-            dcc.Graph(figure=SenioritiesHistogram.make_fig(
+        Graphs.CATEGORIES_PIE_CHART: dcc.Graph(
+            figure=CategoriesPieChart.make_fig(data[TableNames.POSTINGS])
+        ),
+        Graphs.TECHNOLOGIES_PIE_CHART: dcc.Graph(
+            figure=TechnologiesPieChart.make_fig(data[TableNames.POSTINGS])
+        ),
+        Graphs.CAT_TECH_SANKEY_CHART: dcc.Graph(
+            figure=CategoriesTechnologiesSankeyChart.make_fig(
+                data[TableNames.POSTINGS]
+            )
+        ),
+        Graphs.SENIORITY_PIE_CHART: dcc.Graph(
+            figure=SeniorityPieChart.make_fig(data[TableNames.SENIORITIES])
+        ),
+        Graphs.SENIORITIES_HISTOGRAM: dcc.Graph(
+            figure=SenioritiesHistogram.make_fig(
+                data[TableNames.SENIORITIES], data[TableNames.SALARIES]
+            )
+        ),
+        Graphs.REMOTE_PIE_CHART: dcc.Graph(
+            figure=RemotePieChart.make_fig(data[TableNames.POSTINGS])
+        ),
+        Graphs.SALARIES_MAP_JUNIOR: dcc.Graph(
+            figure=SalariesMapJunior.make_fig(
+                data[TableNames.LOCATIONS],
+                data[TableNames.SALARIES],
                 data[TableNames.SENIORITIES],
-                data[TableNames.SALARIES])),
-        Graphs.REMOTE_PIE_CHART:
-            dcc.Graph(figure=RemotePieChart.make_fig(
-                data[TableNames.POSTINGS])),
-        Graphs.SALARIES_MAP_JUNIOR:
-            dcc.Graph(figure=SalariesMapJunior.make_fig(
+            )
+        ),
+        Graphs.SALARIES_MAP_MID: dcc.Graph(
+            figure=SalariesMapMid.make_fig(
                 data[TableNames.LOCATIONS],
                 data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES])),
-        Graphs.SALARIES_MAP_MID:
-            dcc.Graph(figure=SalariesMapMid.make_fig(
+                data[TableNames.SENIORITIES],
+            )
+        ),
+        Graphs.SALARIES_MAP_SENIOR: dcc.Graph(
+            figure=SalariesMapSenior.make_fig(
                 data[TableNames.LOCATIONS],
                 data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES])),
-        Graphs.SALARIES_MAP_SENIOR:
-            dcc.Graph(figure=SalariesMapSenior.make_fig(
-                data[TableNames.LOCATIONS],
-                data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES])),
-        Graphs.SALARIES_MAP:
-            dcc.Graph(figure=SalariesMap.make_fig(
-                data[TableNames.LOCATIONS],
-                data[TableNames.SALARIES])),
-        Graphs.TECHNOLOGIES_VIOLIN_PLOT:
-            dcc.Graph(figure=TechnologiesViolinChart.make_fig(
+                data[TableNames.SENIORITIES],
+            )
+        ),
+        Graphs.SALARIES_MAP: dcc.Graph(
+            figure=SalariesMap.make_fig(
+                data[TableNames.LOCATIONS], data[TableNames.SALARIES]
+            )
+        ),
+        Graphs.TECHNOLOGIES_VIOLIN_PLOT: dcc.Graph(
+            figure=TechnologiesViolinChart.make_fig(
                 data[TableNames.POSTINGS],
                 data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES])),
-        Graphs.CONTRACT_TYPE_VIOLIN_PLOT:
-            dcc.Graph(figure=ContractTypeViolinChart.make_fig(
-                data[TableNames.POSTINGS],
-                data[TableNames.SALARIES])),
+                data[TableNames.SENIORITIES],
+            )
+        ),
+        Graphs.CONTRACT_TYPE_VIOLIN_PLOT: dcc.Graph(
+            figure=ContractTypeViolinChart.make_fig(
+                data[TableNames.POSTINGS], data[TableNames.SALARIES]
+            )
+        ),
     }
     return graphs
 
 
-def make_dynamic_content(data: Dict[TableNames, pd.DataFrame]) -> DynamicContent:
-    obtained_datetime = pd.to_datetime(data[TableNames.METADATA]['obtained_datetime'][0])
+def make_dynamic_content(
+    data: dict[TableNames, pd.DataFrame]
+) -> DynamicContent:
+    obtained_datetime = pd.to_datetime(
+        data[TableNames.METADATA]['obtained_datetime'][0]
+    )
     graphs = make_graphs(data)
     return DynamicContent(obtained_datetime=obtained_datetime, graphs=graphs)
-    
+
 
 def make_navbar() -> DashComponent:
     navbar = dbc.NavbarSimple(
-            dbc.NavLink(
-                dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
-                           color='dark'), href='https://github.com/maciejzj/no-fluff-meta',
-                           active=True, className='mr-0'),
-            brand='IT Jobs Meta', className='bg-white')
+        dbc.NavLink(
+            dbc.Button(
+                [html.I(className='fab fa-github'), ' GitHub'], color='dark'
+            ),
+            href='https://github.com/maciejzj/no-fluff-meta',
+            active=True,
+            className='mr-0',
+        ),
+        brand='IT Jobs Meta',
+        className='bg-white',
+    )
     return navbar
 
 
 def make_jumbotron() -> DashComponent:
     jumbotron = html.Section(
-            dbc.Row([
+        dbc.Row(
+            [
                 dbc.Col(
-                    html.Div(children=[
-                        html.H1('Weekly analysis of IT job offers in Poland'),
-                        dcc.Markdown(DashboardTextualComponents.JUMBOTRON_TEXT_MD),
-                        dbc.Button('To the data',
-                                   href='#data-section',
-                                   outline=True,
-                                   external_link=True,
-                                   active=True, color='light')
-                    ], className='p-5 text-white bg-dark rounded shadow-lg',
+                    html.Div(
+                        children=[
+                            html.H1(
+                                'Weekly analysis of IT job offers in Poland'
+                            ),
+                            dcc.Markdown(
+                                DashboardTextualComponents.JUMBOTRON_TEXT_MD
+                            ),
+                            dbc.Button(
+                                'To the data',
+                                href='#data-section',
+                                outline=True,
+                                external_link=True,
+                                active=True,
+                                color='light',
+                            ),
+                        ],
+                        className='p-5 text-white bg-dark rounded shadow-lg',
                     ),
                     lg=6,
                     className='mt-5',
                 )
-            ]))
+            ]
+        )
+    )
     return jumbotron
 
+
 def make_about() -> DashComponent:
-    about =  html.Section([
-                html.H2('About'),
-                dcc.Markdown(DashboardTextualComponents.ABOUT_TEXT_MD),
-            ], className='text-center mt-5')
+    about = html.Section(
+        [
+            html.H2('About'),
+            dcc.Markdown(DashboardTextualComponents.ABOUT_TEXT_MD),
+        ],
+        className='text-center mt-5',
+    )
     return about
 
-def make_graphs_layout(obtained_datetime: datetime, graphs: Dict[Graphs, go.Figure]) -> DashComponent:
-    data_section = html.Section([
-            html.Div([
-                html.H2('Data', id='data-container'),
-                html.B(f'Last obtained on {obtained_datetime.strftime("%-d %B %Y")}'),
-                html.P('''Although this website works fine on mobile devices, it
+
+def make_grahps_layout_header(obtained_datetime: datetime) -> DashComponent:
+    datetime_str = obtained_datetime.strftime('%-d %B %Y')
+    div = html.Div(
+        [
+            html.H2('Data', id='data-container'),
+            html.B(f'Last obtained on {datetime_str}'),
+            html.P(
+                '''Although this website works fine on mobile devices, it
                 is most convenient to explore more complex graphs on larger
-                screens.''')
-            ], className='text-center mt-5'),
+                screens.'''
+            ),
+        ],
+        className='text-center mt-5',
+    )
+    return div
+
+
+def make_categories_and_seniorities_graphs_layout(
+    graphs: dict[Graphs, go.Figure]
+) -> DashComponent:
+    div = html.Div(
+        [
             html.H3('Categories and seniorities', className='mt-4'),
-            dbc.Row([
-                dbc.Col(dbc.Card(graphs[Graphs.CATEGORIES_PIE_CHART],
-                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
-                dbc.Col(dbc.Card(graphs[Graphs.TECHNOLOGIES_PIE_CHART],
-                        className='mt-4 p-1 border-0 rounded shadow'), md=6),
-            ], align='center'),
-            dbc.Row([
-                dbc.Col(dbc.Card(graphs[Graphs.CAT_TECH_SANKEY_CHART],
-                        className='mt-4 p-1 border-0 rounded shadow'), md=7),
-                dbc.Col(dbc.Card(graphs[Graphs.SENIORITY_PIE_CHART],
-                        className='mt-4 p-1 border-0 rounded shadow'), md=5),
-            ], align='center'),
-            dbc.Card(graphs[Graphs.SENIORITIES_HISTOGRAM],
-                     className='mt-4 p-1 border-0 rounded shadow'),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.CATEGORIES_PIE_CHART],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        md=6,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.TECHNOLOGIES_PIE_CHART],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        md=6,
+                    ),
+                ],
+                align='center',
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.CAT_TECH_SANKEY_CHART],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        md=7,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.SENIORITY_PIE_CHART],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        md=5,
+                    ),
+                ],
+                align='center',
+            ),
+            dbc.Card(
+                graphs[Graphs.SENIORITIES_HISTOGRAM],
+                className='mt-4 p-1 border-0 rounded shadow',
+            ),
+        ]
+    )
+    return div
 
+
+def make_locations_and_remote_graphs_layout(
+    graphs: dict[Graphs, go.Figure]
+) -> DashComponent:
+    div = html.Div(
+        [
             html.H3('Locations and remote', className='mt-4'),
-            dbc.Row([
-                dbc.Col(dbc.Card(graphs[Graphs.REMOTE_PIE_CHART],
-                    className='mt-4 p-1 border-0 rounded shadow'), lg=6),
-                dbc.Col(dbc.Card(graphs[Graphs.SALARIES_MAP],
-                    className='mt-4 p-1 border-0 rounded shadow'), lg=6),
-            ], align='center'),
-            dbc.Row([
-                dbc.Col(dbc.Card(graphs[Graphs.SALARIES_MAP_JUNIOR],
-                        className='mt-4 p-1 border-0 rounded shadow'), lg=4),
-                dbc.Col(dbc.Card(graphs[Graphs.SALARIES_MAP_MID],
-                        className='mt-4 p-1 border-0 rounded shadow'), lg=4),
-                dbc.Col(dbc.Card(graphs[Graphs.SALARIES_MAP_SENIOR],
-                        className='mt-4 p-1 border-0 rounded shadow'), lg=4),
-            ], align='center'),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.REMOTE_PIE_CHART],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        lg=6,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.SALARIES_MAP],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        lg=6,
+                    ),
+                ],
+                align='center',
+            ),
+            dbc.Row(
+                [
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.SALARIES_MAP_JUNIOR],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        lg=4,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.SALARIES_MAP_MID],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        lg=4,
+                    ),
+                    dbc.Col(
+                        dbc.Card(
+                            graphs[Graphs.SALARIES_MAP_SENIOR],
+                            className='mt-4 p-1 border-0 rounded shadow',
+                        ),
+                        lg=4,
+                    ),
+                ],
+                align='center',
+            ),
+        ]
+    )
+    return div
 
+
+def make_salaries_breakdown_graphs_layout(
+    graphs: dict[Graphs, go.Figure]
+) -> DashComponent:
+    div = html.Div(
+        [
             html.H3('Salaries breakdown', className='mt-4'),
-            dbc.Card(graphs[Graphs.TECHNOLOGIES_VIOLIN_PLOT],
-                     className='mt-4 p-1 border-0 rounded shadow'),
-            dbc.Card(graphs[Graphs.CONTRACT_TYPE_VIOLIN_PLOT],
-                     className='mt-4 p-1 border-0 rounded shadow')
-            ], id='data-section')
+            dbc.Card(
+                graphs[Graphs.TECHNOLOGIES_VIOLIN_PLOT],
+                className='mt-4 p-1 border-0 rounded shadow',
+            ),
+            dbc.Card(
+                graphs[Graphs.CONTRACT_TYPE_VIOLIN_PLOT],
+                className='mt-4 p-1 border-0 rounded shadow',
+            ),
+        ]
+    )
+    return div
+
+
+def make_graphs_layout(
+    obtained_datetime: datetime, graphs: dict[Graphs, go.Figure]
+) -> DashComponent:
+    data_section = html.Section(
+        [
+            make_grahps_layout_header(obtained_datetime),
+            make_categories_and_seniorities_graphs_layout(graphs),
+            make_locations_and_remote_graphs_layout(graphs),
+            make_salaries_breakdown_graphs_layout(graphs),
+        ],
+        id='data-section',
+    )
     return data_section
 
 
 def make_footer() -> DashComponent:
-    footer = html.Footer([
-        html.Div(html.Strong('Maciej Ziaja')),
-        html.Div('maciejzj@icloud.com'),
-        dbc.Button([html.I(className="fab fa-github"), ' GitHub'],
-                           color='dark',
-                           href='https://github.com/maciejzj/no-fluff-meta',
-                           className='mt-2')
-    ], className='m-3 p-3 text-center')
+    footer = html.Footer(
+        [
+            html.Div(html.Strong('Maciej Ziaja')),
+            html.Div('maciejzj@icloud.com'),
+            dbc.Button(
+                [html.I(className='fab fa-github'), ' GitHub'],
+                color='dark',
+                href='https://github.com/maciejzj/no-fluff-meta',
+                className='mt-2',
+            ),
+        ],
+        className='m-3 p-3 text-center',
+    )
     return footer
 
 
 def make_layout(dynamic_content: DynamicContent):
-    layout = html.Div(children=[
-        make_navbar(),
-        dbc.Container([
-        make_jumbotron(),
-            make_about(),
-            make_graphs_layout(dynamic_content.obtained_datetime, dynamic_content.graphs)
-        ], className='pb-3'),
-        make_footer()
-    ], className='w-100')
+    layout = html.Div(
+        children=[
+            make_navbar(),
+            dbc.Container(
+                [
+                    make_jumbotron(),
+                    make_about(),
+                    make_graphs_layout(
+                        dynamic_content.obtained_datetime,
+                        dynamic_content.graphs,
+                    ),
+                ],
+                className='pb-3',
+            ),
+            make_footer(),
+        ],
+        className='w-100',
+    )
     return layout
 
 
@@ -266,18 +436,24 @@ def make_dash_app() -> dash.Dash:
     app = dash.Dash(
         'it-jobs-meta-dashboard',
         assets_folder='dashboard/assets',
-        external_stylesheets=[
-            dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
+        title='IT Jobs Meta',
         meta_tags=[
-            {"name": "viewport",
-             "content": "width=device-width, initial-scale=1"},
-        ])
+            {
+                'description': 'Weekly analysis of IT job offers in Poland',
+                'keywords': 'Programming, Software, IT, Jobs',
+                'name': 'viewport',
+                'content': 'width=device-width, initial-scale=1',
+            },
+        ],
+    )
     return app
 
 
 if __name__ == '__main__':
     data_warehouse_config_path = Path(
-        'data_processing/config/warehouse_db_config.yaml')
+        'data_processing/config/warehouse_db_config.yaml'
+    )
     data = gather_data(data_warehouse_config_path)
     dynamic_content = make_dynamic_content(data)
 
