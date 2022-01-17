@@ -8,7 +8,8 @@ import requests
 from .data_formats import (
     PostingsMetadata,
     PostingsData,
-    NoFluffJObsPostingsData)
+    NoFluffJObsPostingsData,
+)
 
 
 class PostingsDataSource(ABC):
@@ -34,11 +35,9 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
         datetime_now = datetime.datetime.now()
 
         metadata = PostingsMetadata(
-            source_name=cls.SOURCE_NAME,
-            obtained_datetime=datetime_now)
-        data = NoFluffJObsPostingsData(
-            metadata=metadata,
-            raw_data=raw_data)
+            source_name=cls.SOURCE_NAME, obtained_datetime=datetime_now
+        )
+        data = NoFluffJObsPostingsData(metadata=metadata, raw_data=raw_data)
 
         return data
 

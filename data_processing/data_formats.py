@@ -87,7 +87,8 @@ class NoFluffJObsPostingsData(PostingsData):
         data_dict = json.loads(json_str)
         source_name = data_dict['metadata']['source_name']
         obtained_datetime = datetime.datetime.fromisoformat(
-            data_dict['metadata']['obtained_datetime'])
+            data_dict['metadata']['obtained_datetime']
+        )
         metadata = PostingsMetadata(source_name, obtained_datetime)
         raw_data = data_dict['raw_data']
         return cls(metadata, raw_data)

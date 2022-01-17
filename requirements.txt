@@ -1,12 +1,10 @@
-dash
 dash-bootstrap-components
 geopy
 numpy
 pandas
 pandera
+pylint
 pymysql
-pytest
-pytest-mock
 pyyaml
 redis
 requests

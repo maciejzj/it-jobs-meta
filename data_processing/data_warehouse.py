@@ -25,23 +25,18 @@ class EtlConstants:
         'highlighted',
         'onlineInterviewAvailable',
         'referralBonus',
-        'referralBonusCurrency'
+        'referralBonusCurrency',
     ]
 
     VALS_TO_REPLACE = {
         'node.js': 'node',
         'angular': 'javascript',
-        'react': 'javascript'
+        'react': 'javascript',
     }
 
-    COLS_TO_TITLE_CASE = [
-        'category'
-    ]
+    COLS_TO_TITLE_CASE = ['category']
 
-    COLS_TO_CAPITALIZE = [
-        'technology',
-        'contract_type'
-    ]
+    COLS_TO_CAPITALIZE = ['technology', 'contract_type']
 
     CAPITALIZE_SPECIAL_NAMES = {
         '.net': '.Net',
@@ -50,7 +45,7 @@ class EtlConstants:
         'javascript': 'JavaScript',
         'php': 'PHP',
         'sql': 'SQL',
-        'b2b': 'B2B'
+        'b2b': 'B2B',
     }
 
     POSTINGS_TABLE_COLS = [
@@ -60,22 +55,19 @@ class EtlConstants:
         'technology',
         'category',
         'url',
-        'remote'
+        'remote',
     ]
 
     SALARIES_TABLE_COLS = [
         'contract_type',
         'salary_min',
         'salary_max',
-        'salary_mean']
+        'salary_mean',
+    ]
 
-    LOCATIONS_TABLE_COLS = [
-        'city',
-        'lat',
-        'lon']
+    LOCATIONS_TABLE_COLS = ['city', 'lat', 'lon']
 
-    SENIORITY_TABLE_COLS = [
-        'seniority']
+    SENIORITY_TABLE_COLS = ['seniority']
 
 
 @dataclass
@@ -162,10 +154,12 @@ class EtlLoadingEngine(Generic[DataType], ABC):
 
 
 class EtlPipeline(Generic[DataType, PipelineInputType]):
-    def __init__(self,
-                 extraction_engine: EtlExtractionEngine[PipelineInputType, DataType],
-                 transofrmation_engine: EtlTransformationEngine[DataType],
-                 loading_engine: EtlLoadingEngine[DataType]):
+    def __init__(
+        self,
+        extraction_engine: EtlExtractionEngine[PipelineInputType, DataType],
+        transofrmation_engine: EtlTransformationEngine[DataType],
+        loading_engine: EtlLoadingEngine[DataType],
+    ):
 
         self._extraction_engine = extraction_engine
         self._transformation_engine = transofrmation_engine
@@ -197,8 +191,10 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
 
 
 def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
-    ret = (f'{config.protocol_name}://{config.user_name}:{config.password}'
-           f'@{config.host_address}/{config.db_name}')
+    ret = (
+        f'{config.protocol_name}://{config.user_name}:{config.password}'
+        f'@{config.host_address}/{config.db_name}'
+    )
     return ret
 
 
@@ -220,20 +216,21 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
         data_df = data_df.set_index('id')
         return metadata_df, data_df
 
-
     @staticmethod
     def validate_nofluffjobs_data(data: NoFluffJObsPostingsData):
         if data.metadata.source_name != 'nofluffjobs':
             raise ValueError(
                 'Data extractor got correct data format type, but the '
                 'metadata indicates invlaid data source; expected: '
-                f'"nofluffjobs", got: {data.metadata.source_name}')
+                f'"nofluffjobs", got: {data.metadata.source_name}'
+            )
         try:
             assert data.raw_data['totalCount'] == len(data.raw_data['postings'])
         except KeyError as error:
             raise ValueError(
-                    'Data extractor got correct data format type and'
-                    'metadata, but "raw_data" was malformed') from error
+                'Data extractor got correct data format type and'
+                'metadata, but "raw_data" was malformed'
+            ) from error
 
 
 class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
@@ -252,37 +249,45 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def to_title_case(self, data: pd.DataFrame) -> pd.DataFrame:
         for col in EtlConstants.COLS_TO_TITLE_CASE:
             data[col] = data[col][data[col].notna()].transform(
-                lambda s: re.sub(r'([A-Z])', r' \1', s).title())
+                lambda s: re.sub(r'([A-Z])', r' \1', s).title()
+            )
         return data
 
     def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
         specials = EtlConstants.CAPITALIZE_SPECIAL_NAMES
         for col in EtlConstants.COLS_TO_CAPITALIZE:
             data[col] = data[col][data[col].notna()].transform(
-                lambda s: specials[s] if s in specials else s.capitalize())
+                lambda s: specials[s] if s in specials else s.capitalize()
+            )
         return data
 
     def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:
         data['remote'] = data['location'].transform(
-            lambda location_dict: location_dict['fullyRemote'])
+            lambda location_dict: location_dict['fullyRemote']
+        )
         return data
 
     def extract_locations(self, data: pd.DataFrame) -> pd.DataFrame:
         data['city'] = data['location'].transform(
-            lambda location_dict: [self._geolocator(loc['city'])
-                                   for loc in location_dict['places']])
+            lambda location_dict: [
+                self._geolocator(loc['city']) for loc in location_dict['places']
+            ]
+        )
         return data
 
     def extract_contract_type(self, data: pd.DataFrame) -> pd.DataFrame:
         data['contract_type'] = data['salary'].transform(
-            lambda salary_dict: salary_dict['type'])
+            lambda salary_dict: salary_dict['type']
+        )
         return data
 
     def extract_salaries(self, data: pd.DataFrame) -> pd.DataFrame:
         data['salary_min'] = data['salary'].transform(
-            lambda salary_dict: salary_dict['from'])
+            lambda salary_dict: salary_dict['from']
+        )
         data['salary_max'] = data['salary'].transform(
-            lambda salary_dict: salary_dict['to'])
+            lambda salary_dict: salary_dict['to']
+        )
         data['salary_mean'] = data[['salary_max', 'salary_min']].mean(axis=1)
         return data
 
@@ -298,9 +303,9 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     def __init__(self, db_config: DataWarehouseDbConfig):
         self._db_con = db.create_engine(make_db_uri_from_config(db_config))
 
-    def load_tables_to_warehouse(self,
-                                 metadata: pd.DataFrame,
-                                 data: pd.DataFrame):
+    def load_tables_to_warehouse(
+        self, metadata: pd.DataFrame, data: pd.DataFrame
+    ):
 
         metadata.to_sql('metadata', con=self._db_con, if_exists='replace')
 
@@ -314,7 +319,9 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         location_df.to_sql('locations', con=self._db_con, if_exists='replace')
 
         seniority_df = self.prepare_seniorities_table(data)
-        seniority_df.to_sql('seniorities', con=self._db_con, if_exists='replace')
+        seniority_df.to_sql(
+            'seniorities', con=self._db_con, if_exists='replace'
+        )
 
     def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
         postings_df = data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
@@ -327,12 +334,15 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
         locations_df = data.explode('city')
         locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
-            lambda city: pd.Series([city[0], city[1], city[2]]))
+            lambda city: pd.Series([city[0], city[1], city[2]])
+        )
         locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
         locations_df = locations_df.dropna().reset_index()
         return Schemas.locations.validate(locations_df)
 
     def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
         seniority_df = data.explode('seniority')
-        seniority_df = seniority_df[EtlConstants.SENIORITY_TABLE_COLS].reset_index()
+        seniority_df = seniority_df[
+            EtlConstants.SENIORITY_TABLE_COLS
+        ].reset_index()
         return Schemas.seniorities.validate(seniority_df)

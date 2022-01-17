@@ -40,10 +40,13 @@ class RedisDataLake(DataLake):
     This implementation is rather intended for development and prototyping,
     since Redis is not the main joice for data lakes.
     """
+
     def __init__(self, db_config: DataLakeDbConfig):
-        self._db = redis.Redis(host=db_config.host_address,
-                               password=db_config.password,
-                               db=db_config.db_num)
+        self._db = redis.Redis(
+            host=db_config.host_address,
+            password=db_config.password,
+            db=db_config.db_num,
+        )
 
     def set_data(self, key: str, data: str):
         """Store data under key. Data is assumed to be json string."""

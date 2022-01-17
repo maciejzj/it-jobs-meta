@@ -2,13 +2,15 @@ import datetime
 import json
 
 from ..data_ingestion import NoFluffJobsPostingsDataSource
-  
+
 
 class MockResponse:
     @staticmethod
     def json():
-        return {'postings': 'mock_postings_list',
-                'totalCount': 'mock_total_count'}
+        return {
+            'postings': 'mock_postings_list',
+            'totalCount': 'mock_total_count',
+        }
 
 
 class TestNoFluffJobsPostingsDataSource:
@@ -38,7 +40,7 @@ class TestNoFluffJobsPostingsDataSource:
         mocker.patch('requests.get', return_value=MockResponse())
 
         data = NoFluffJobsPostingsDataSource.get()
-        result = data.make_key_for_data() 
+        result = data.make_key_for_data()
         assert result == expected
 
     def test_make_json_string_returns_json_with_correct_structure(self, mocker):
@@ -55,7 +57,8 @@ class TestNoFluffJobsPostingsDataSource:
         datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
         expected_json_metatada_str = {
             'source_name': 'nofluffjobs',
-            'obtained_datetime': '2021-12-01 08:30:05'}
+            'obtained_datetime': '2021-12-01 08:30:05',
+        }
         datetime_mock = mocker.patch('datetime.datetime')
         datetime_mock.now.return_value = datetime_
 
@@ -64,4 +67,6 @@ class TestNoFluffJobsPostingsDataSource:
         data = NoFluffJobsPostingsDataSource.get()
         result = data.make_json_str_from_data()
         result_back_to_json_dict = json.loads(result)
-        assert result_back_to_json_dict['metadata'] == expected_json_metatada_str
+        assert (
+            result_back_to_json_dict['metadata'] == expected_json_metatada_str
+        )
