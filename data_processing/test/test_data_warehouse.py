@@ -8,64 +8,81 @@ import pandas as pd
 from ..data_warehouse import (
     DataWarehouseDbConfig,
     EtlConstants,
-    PandasEtlTransformationEngine)
+    PandasEtlTransformationEngine,
+)
 
 
-POSTINGS_LIST_MOCK = [{
-    'id': 'ELGZSKOL',
-    'name': 'Acaisoft Poland Sp. z.o.o',
-    'location': {
-        'places': [
-          {'country': {'code': 'POL', 'name': 'Poland'},
-           'city': 'Warsaw',
-           'street': '',
-           'postalCode': '',
-           'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol'},
-          {'country': {'code': 'POL', 'name': 'Poland'},
-           'city': 'Gdynia',
-           'street': '',
-           'postalCode': '',
-           'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol'},
-          {'country': {'code': 'POL', 'name': 'Poland'},
-           'city': 'Białystok',
-           'street': '',
-           'postalCode': '',
-           'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol'}],
-        'fullyRemote': True,
-        'covidTimeRemotely': False},
-    'posted': 1635163809168,
-    'renewed': 1636895409168,
-    'title': 'SQL Developer (Node.js)',
-    'technology': 'sql',
-    'logo': {
-        'original': 'companies/logos/original/1615390311915.jpeg',
-        'jobs_details': 'companies/logos/jobs_details/1615390311915.jpeg'},
-    'category': 'backend',
-    'seniority': ['Senior', 'Mid'],
-    'url': 'sql-developer-node-js-acaisoft-poland-remote-elgzskol',
-    'regions': ['pl'],
-    'salary': {'from': 20000, 'to': 25000, 'type': 'b2b', 'currency': 'PLN'},
-    'flavors': ['it'],
-    'topInSearch': False,
-    'highlighted': False,
-    'onlineInterviewAvailable': True,
-    'referralBonus': math.nan,
-    'referralBonusCurrency': math.nan}
+POSTINGS_LIST_MOCK = [
+    {
+        'id': 'ELGZSKOL',
+        'name': 'Acaisoft Poland Sp. z.o.o',
+        'location': {
+            'places': [
+                {
+                    'country': {'code': 'POL', 'name': 'Poland'},
+                    'city': 'Warsaw',
+                    'street': '',
+                    'postalCode': '',
+                    'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol',
+                },
+                {
+                    'country': {'code': 'POL', 'name': 'Poland'},
+                    'city': 'Gdynia',
+                    'street': '',
+                    'postalCode': '',
+                    'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol',
+                },
+                {
+                    'country': {'code': 'POL', 'name': 'Poland'},
+                    'city': 'Białystok',
+                    'street': '',
+                    'postalCode': '',
+                    'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol',
+                },
+            ],
+            'fullyRemote': True,
+            'covidTimeRemotely': False,
+        },
+        'posted': 1635163809168,
+        'renewed': 1636895409168,
+        'title': 'SQL Developer (Node.js)',
+        'technology': 'sql',
+        'logo': {
+            'original': 'companies/logos/original/1615390311915.jpeg',
+            'jobs_details': 'companies/logos/jobs_details/1615390311915.jpeg',
+        },
+        'category': 'backend',
+        'seniority': ['Senior', 'Mid'],
+        'url': 'sql-developer-node-js-acaisoft-poland-remote-elgzskol',
+        'regions': ['pl'],
+        'salary': {
+            'from': 20000,
+            'to': 25000,
+            'type': 'b2b',
+            'currency': 'PLN',
+        },
+        'flavors': ['it'],
+        'topInSearch': False,
+        'highlighted': False,
+        'onlineInterviewAvailable': True,
+        'referralBonus': math.nan,
+        'referralBonusCurrency': math.nan,
+    }
 ]
 
 POSTINGS_RESPONSE_JSON_DICT_MOCK = {
     'postings': POSTINGS_LIST_MOCK,
-    'totalCount': 1
+    'totalCount': 1,
 }
 
 POSTINGS_METADATA_DICT_MOCK = {
     'source_name': 'nofluffjobs',
-    'obtained_datetime': '2021-12-01 08:30:05'
+    'obtained_datetime': '2021-12-01 08:30:05',
 }
 
 POSTINGS_DATA_DICT_MOCK = {
     'metadata': POSTINGS_METADATA_DICT_MOCK,
-    'data': POSTINGS_RESPONSE_JSON_DICT_MOCK
+    'data': POSTINGS_RESPONSE_JSON_DICT_MOCK,
 }
 
 DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
@@ -73,7 +90,8 @@ DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
     user_name='it_jobs_meta_worker',
     password='roottmppass',
     host_address='0.0.0.0',
-    db_name='it_jobs_meta_datawarehouse')
+    db_name='it_jobs_meta_datawarehouse',
+)
 
 
 class TestHappyPathPandasDataWarehouseETL:

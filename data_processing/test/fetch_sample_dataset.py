@@ -2,6 +2,7 @@ from pathlib import Path
 
 from ..data_ingestion import NoFluffJobsPostingsDataSource
 
+
 def main():
     data_source = NoFluffJobsPostingsDataSource
     data = data_source.get()

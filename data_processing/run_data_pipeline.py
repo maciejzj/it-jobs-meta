@@ -3,19 +3,15 @@ import sys
 from pathlib import Path
 from typing import Any, Dict
 
-from .data_ingestion import (
-    PostingsDataSource,
-    NoFluffJobsPostingsDataSource)
-from .data_lake import (
-    DataLake,
-    RedisDataLake,
-    load_data_lake_db_config)
+from .data_ingestion import PostingsDataSource, NoFluffJobsPostingsDataSource
+from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
 from .data_warehouse import (
     PandasEtlSqlLoadingEngine,
     PandasEtlExtractionFromJsonStr,
     PandasEtlTransformationEngine,
     EtlPipeline,
-    load_warehouse_db_config)
+    load_warehouse_db_config,
+)
 
 
 def make_data_source() -> PostingsDataSource:
@@ -33,14 +29,15 @@ def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
     extracor = PandasEtlExtractionFromJsonStr()
     transformer = PandasEtlTransformationEngine()
     loader = PandasEtlSqlLoadingEngine(
-        load_warehouse_db_config(data_warehouse_config_path))
+        load_warehouse_db_config(data_warehouse_config_path)
+    )
     data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
     return data_warehouse_etl
 
 
 def run_ingest_data(
-        data_source: PostingsDataSource, data_lake: DataLake
-    ) -> Dict[str, Any]:
+    data_source: PostingsDataSource, data_lake: DataLake
+) -> Dict[str, Any]:
 
     data = data_source.get()
     data_key = data.make_key_for_data()
@@ -59,15 +56,19 @@ def setup_logging():
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler("it_jobs_meta.log"),
-            logging.StreamHandler(sys.stdout)])
+            logging.StreamHandler(sys.stdout),
+        ],
+    )
 
 
 def main():
     try:
         data_lake_config_path = Path(
-            'data_processing/config/data_lake_db_config.yaml')
+            'data_processing/config/data_lake_db_config.yaml'
+        )
         dat_warehouse_config_path = Path(
-            'data_processing/config/warehouse_db_config.yaml')
+            'data_processing/config/warehouse_db_config.yaml'
+        )
 
         setup_logging()
         logging.info('Started data pipeline')

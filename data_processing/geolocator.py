@@ -8,14 +8,15 @@ class Geolocator:
     geolocator = Nominatim(user_agent='it-jobs-meta')
 
     @functools.cache
-    def __call__(self, city_name: str, only_from_poland=True
-                 ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+    def __call__(
+        self, city_name: str, only_from_poland=True
+    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
         return self.get_universal_city_name_lat_lon(city_name)
 
     @classmethod
     def get_universal_city_name_lat_lon(
-            cls, city_name: str, only_from_poland=True
-            ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+        cls, city_name: str, only_from_poland=True
+    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
 
         location = cls.geolocator.geocode(city_name)
 
@@ -23,7 +24,8 @@ class Geolocator:
             return Geolocator.make_none_location()
 
         city_name, country_name = Geolocator.address_str_to_city_country_name(
-            location.address)
+            location.address
+        )
 
         if only_from_poland and country_name != "Polska":
             return Geolocator.make_none_location()
