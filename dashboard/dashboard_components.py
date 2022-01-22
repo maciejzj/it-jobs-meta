@@ -140,7 +140,7 @@ class SenioritiesHistogram:
         )
         fig = fig.update_layout(
             legend_title_text=None,
-            xaxis_title_text='Mean salary',
+            xaxis_title_text='Mean salary (PLN)',
             yaxis_title_text='Count',
         )
         fig = move_legend_to_top(fig)
@@ -159,7 +159,7 @@ class RemotePieChart:
 
 
 class SalariesMap:
-    TITLE = 'Mean salary by location'
+    TITLE = 'Mean salary by location (PLN)'
     MIN_CITY_FREQ = 15
 
     @classmethod
@@ -343,7 +343,7 @@ class TechnologiesViolinChart:
         fig = move_legend_to_top(fig)
         fig = fig.update_traces(spanmode='hard', meanline_visible=True)
         fig = fig.update_layout(
-            yaxis_title_text='Mean salary',
+            yaxis_title_text='Mean salary (PLN)',
             xaxis_title_text='Technology',
             legend_title_text=None,
         )
@@ -397,7 +397,7 @@ class ContractTypeViolinChart:
         fig.update_layout(
             violingap=0,
             violinmode='overlay',
-            yaxis_title_text='Mean salary',
+            yaxis_title_text='Mean salary (PLN)',
             xaxis_title_text='Technology',
             title=cls.TITLE,
         )
