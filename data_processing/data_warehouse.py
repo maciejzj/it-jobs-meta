@@ -291,7 +291,7 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         data['salary_mean'] = data[['salary_max', 'salary_min']].mean(axis=1)
         return data
 
-    def unify_missing_values(self, data) -> pd.DataFrame:
+    def unify_missing_values(self, data: pd.DataFrame) -> pd.DataFrame:
         data = data.replace('', None)
         data = data.replace('NaN', None)
         data = data.replace('Nan', None)

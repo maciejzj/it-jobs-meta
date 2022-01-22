@@ -85,7 +85,9 @@ class CategoriesTechnologiesSankeyChart:
             & postings_df['technology'].isin(tech_most_freq)
         ]
 
-        catgrp = cat_tech_most_freq_df.groupby('category')['technology'].value_counts()
+        catgrp = cat_tech_most_freq_df.groupby('category')[
+            'technology'
+        ].value_counts()
         catgrp = catgrp.drop(catgrp[catgrp < cls.MIN_FLOW].index)
         catgrp = catgrp.dropna()
 
@@ -123,7 +125,7 @@ class SeniorityPieChart:
 
 
 class SenioritiesHistogram:
-    TITLE = 'Salaries histogram'
+    TITLE = 'Histogram'
     MAX_SALARY = 40000
 
     @classmethod
@@ -142,7 +144,6 @@ class SenioritiesHistogram:
             yaxis_title_text='Count',
         )
         fig = move_legend_to_top(fig)
-        fig = center_title(fig)
         return fig
 
 
@@ -327,7 +328,9 @@ class TechnologiesViolinChart:
             pss_df, 'technology', cls.N_MOST_FREQ_TECH
         )
         limited = tech_most_freq[tech_most_freq['salary_mean'] < cls.MAX_SALARY]
-        limited = limited[limited['seniority'].isin(('Junior', 'Mid', 'Senior'))]
+        limited = limited[
+            limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
+        ]
         fig = px.violin(
             limited,
             y='salary_mean',
