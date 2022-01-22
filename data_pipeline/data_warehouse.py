@@ -211,7 +211,9 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
     def extract(self, input_: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         data = NoFluffJObsPostingsData.from_json_str(input_)
         self.validate_nofluffjobs_data(data)
-        metadata_df = pd.DataFrame(dataclasses.asdict(data.metadata), index=[0])
+        metadata_df = pd.DataFrame(
+            dataclasses.asdict(data.metadata), index=[0]
+        )
         data_df = pd.DataFrame(data.raw_data['postings'])
         data_df = data_df.set_index('id')
         return metadata_df, data_df
@@ -225,7 +227,9 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
                 f'"nofluffjobs", got: {data.metadata.source_name}'
             )
         try:
-            assert data.raw_data['totalCount'] == len(data.raw_data['postings'])
+            assert data.raw_data['totalCount'] == len(
+                data.raw_data['postings']
+            )
         except KeyError as error:
             raise ValueError(
                 'Data extractor got correct data format type and'
@@ -270,7 +274,8 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def extract_locations(self, data: pd.DataFrame) -> pd.DataFrame:
         data['city'] = data['location'].transform(
             lambda location_dict: [
-                self._geolocator(loc['city']) for loc in location_dict['places']
+                self._geolocator(loc['city'])
+                for loc in location_dict['places']
             ]
         )
         return data

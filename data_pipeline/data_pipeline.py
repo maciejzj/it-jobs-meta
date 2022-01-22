@@ -1,7 +1,7 @@
 import logging
-import sys
 from pathlib import Path
-from typing import Any, Dict
+
+from common.utils import setup_logging
 
 from .data_ingestion import PostingsDataSource, NoFluffJobsPostingsDataSource
 from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
@@ -41,32 +41,13 @@ def run_ingest_data(
     return data_lake.get_data(data_key)
 
 
-def run_warehouse_data(data: str, data_warehouse_etl: EtlPipeline):
-    data_warehouse_etl.run(data)
-
-
-def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler("it_jobs_meta.log"),
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
-
-
 def main():
     try:
-        data_lake_config_path = Path(
-            'data_processing/config/data_lake_db_config.yaml'
-        )
-        dat_warehouse_config_path = Path(
-            'data_processing/config/warehouse_db_config.yaml'
-        )
-
         setup_logging()
         logging.info('Started data pipeline')
+
+        data_lake_config_path = Path('config/data_lake_db_config.yaml')
+        data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
 
         logging.info('Attempting to perform data ingestion step')
         data_source = NoFluffJobsPostingsDataSource
@@ -75,8 +56,10 @@ def main():
         logging.info('Data ingestion succeeded')
 
         logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = make_data_warehouse_etl(dat_warehouse_config_path)
-        run_warehouse_data(data, data_warehouse_etl)
+        data_warehouse_etl = make_data_warehouse_etl(
+            data_warehouse_config_path
+        )
+        data_warehouse_etl.run(data)
         logging.info('Data warehousing succeeded')
 
         logging.info('Data pipeline succeeded, exiting')

@@ -105,7 +105,9 @@ class CategoriesTechnologiesSankeyChart:
             data=[
                 go.Sankey(
                     node=dict(label=np.unique(sources + targets)),
-                    link=dict(source=sources_e, target=targets_e, value=values),
+                    link=dict(
+                        source=sources_e, target=targets_e, value=values
+                    ),
                 )
             ]
         )
@@ -327,7 +329,9 @@ class TechnologiesViolinChart:
         tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
             pss_df, 'technology', cls.N_MOST_FREQ_TECH
         )
-        limited = tech_most_freq[tech_most_freq['salary_mean'] < cls.MAX_SALARY]
+        limited = tech_most_freq[
+            tech_most_freq['salary_mean'] < cls.MAX_SALARY
+        ]
         limited = limited[
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
@@ -364,7 +368,9 @@ class ContractTypeViolinChart:
         tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
             pos_sal_df, 'technology', cls.N_MOST_FREQ_TECH
         )
-        limited = tech_most_freq[tech_most_freq['salary_mean'] < cls.MAX_SALARY]
+        limited = tech_most_freq[
+            tech_most_freq['salary_mean'] < cls.MAX_SALARY
+        ]
         b2b_df = limited[limited['contract_type'] == 'B2B']
         perm_df = limited[limited['contract_type'] == 'Permanent']
 

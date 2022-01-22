@@ -1,8 +1,6 @@
 import math
-from pathlib import Path
 
 import pytest
-import json
 import pandas as pd
 
 from ..data_warehouse import (
