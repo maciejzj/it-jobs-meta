@@ -289,6 +289,12 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
             lambda salary_dict: salary_dict['to']
         )
         data['salary_mean'] = data[['salary_max', 'salary_min']].mean(axis=1)
+
+        data = data[
+            data['salary'].transform(
+                lambda salary_dict: salary_dict['currency'] == 'PLN'
+            )
+        ]
         return data
 
     def unify_missing_values(self, data: pd.DataFrame) -> pd.DataFrame:
