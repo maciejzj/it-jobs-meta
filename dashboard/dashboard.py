@@ -12,7 +12,7 @@ from dash import html
 from dash.development import base_component as DashComponent
 from plotly import graph_objects as go
 
-from data_processing.data_warehouse import (
+from data_pipeline.data_warehouse import (
     make_db_uri_from_config,
     load_warehouse_db_config,
 )
