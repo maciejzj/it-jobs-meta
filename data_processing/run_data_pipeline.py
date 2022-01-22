@@ -14,11 +14,6 @@ from .data_warehouse import (
 )
 
 
-def make_data_source() -> PostingsDataSource:
-    data_source = NoFluffJobsPostingsDataSource
-    return data_source
-
-
 def make_data_lake(data_lake_config_path: Path) -> DataLake:
     data_lake_config = load_data_lake_db_config(data_lake_config_path)
     data_lake = RedisDataLake(data_lake_config)
@@ -37,7 +32,7 @@ def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
 
 def run_ingest_data(
     data_source: PostingsDataSource, data_lake: DataLake
-) -> Dict[str, Any]:
+) -> str:
 
     data = data_source.get()
     data_key = data.make_key_for_data()
@@ -46,7 +41,7 @@ def run_ingest_data(
     return data_lake.get_data(data_key)
 
 
-def run_warehouse_data(data, data_warehouse_etl):
+def run_warehouse_data(data: str, data_warehouse_etl: EtlPipeline):
     data_warehouse_etl.run(data)
 
 
@@ -74,7 +69,7 @@ def main():
         logging.info('Started data pipeline')
 
         logging.info('Attempting to perform data ingestion step')
-        data_source = make_data_source()
+        data_source = NoFluffJobsPostingsDataSource
         data_lake = make_data_lake(data_lake_config_path)
         data = run_ingest_data(data_source, data_lake)
         logging.info('Data ingestion succeeded')

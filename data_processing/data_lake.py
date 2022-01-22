@@ -24,7 +24,7 @@ class DataLake(ABC):
         """Store data under key. Data is assumed to be json string."""
 
     @abstractmethod
-    def get_data(self, key: str) -> dict[str, Any]:
+    def get_data(self, key: str) -> str:
         """Get data stored under key. Data is assumed ot be json string."""
 
 

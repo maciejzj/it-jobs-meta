@@ -27,14 +27,14 @@ class Geolocator:
             location.address
         )
 
-        if only_from_poland and country_name != "Polska":
+        if only_from_poland and country_name != 'Polska':
             return Geolocator.make_none_location()
 
         return city_name, location.latitude, location.longitude
 
     @staticmethod
     def address_str_to_city_country_name(address: str) -> tuple[str, str]:
-        split_loc = address.split(",")
+        split_loc = address.split(',')
         city_name, country_name = split_loc[0].strip(), split_loc[-1].strip()
         return city_name, country_name
 
