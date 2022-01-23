@@ -1,10 +1,10 @@
+dash
 dash-bootstrap-components
 flask-caching
 geopy
 numpy
 pandas
 pandera
-pylint
 pymysql
 pyyaml
 redis
