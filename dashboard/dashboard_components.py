@@ -45,6 +45,7 @@ class TechnologiesPieChart:
         tech_most_freq_df = get_rows_with_n_most_freqent_vals_in_col(
             postings_df, 'technology', cls.N_MOST_FREQ
         )
+
         fig = px.pie(tech_most_freq_df, names='technology', title=cls.TITLE)
         fig.update_traces(textposition='inside')
         fig = center_title(fig)
@@ -60,6 +61,7 @@ class CategoriesPieChart:
         cat_largest_df = get_rows_with_n_most_freqent_vals_in_col(
             postings_df, 'category', cls.N_MOST_FREQ
         )
+
         fig = px.pie(cat_largest_df, names='category', title=cls.TITLE)
         fig.update_traces(textposition='inside')
         fig = center_title(fig)
@@ -137,6 +139,7 @@ class SenioritiesHistogram:
         sen_sal_df = seniorities_df.merge(salaries_df, on='id')
         sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] < cls.MAX_SALARY]
         sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] > 0]
+
         fig = px.histogram(
             sen_sal_df, x='salary_mean', color='seniority', title=cls.TITLE
         )
@@ -155,6 +158,7 @@ class RemotePieChart:
     @classmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
         remote_df = postings_df['remote'].replace({1: 'Yes', 0: 'No'})
+
         fig = px.pie(remote_df, names='remote', title=cls.TITLE)
         fig = center_title(fig)
         return fig
@@ -208,7 +212,9 @@ class SalariesMapFilteredBySeniority:
 
         loc_sen_df = locations_df.merge(seniorities_df, on='id')
         loc_sen_df = loc_sen_df[loc_sen_df['seniority'] == seniority]
-        return SalariesMap.make_fig(loc_sen_df, salaries_df)
+
+        fig = SalariesMap.make_fig(loc_sen_df, salaries_df)
+        return fig
 
 
 class SalariesMapJunior:
@@ -294,6 +300,7 @@ class SalariesSenioritiesMapChart:
         jobs_cities_salaries = pd.concat(
             [salaries, job_counts.rename('job_counts')], axis=1
         ).reset_index()
+
         fig = px.scatter_geo(
             jobs_cities_salaries,
             scope='europe',
@@ -335,6 +342,7 @@ class TechnologiesViolinChart:
         limited = limited[
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
+
         fig = px.violin(
             limited,
             y='salary_mean',
