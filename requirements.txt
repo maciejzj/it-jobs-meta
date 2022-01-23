@@ -11,4 +11,3 @@ redis
 requests
 sklearn
 sqlalchemy
-typer
