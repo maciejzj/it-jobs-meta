@@ -485,7 +485,7 @@ class App:
         return cls._cache
 
 
-@App.cache.memoize(App.cache_timeout_seconds)
+@App.cache.memoize(timeout=App.cache_timeout_seconds)
 def render_dashboard(data_warehouse_config_path: Path) -> DashComponent:
     logging.info('Rendering dashboard')
     logging.info('Attempting to retrieve data from warehouse on startup')
