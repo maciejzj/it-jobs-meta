@@ -512,7 +512,7 @@ def main():
     try:
         setup_logging()
         data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
-        App = make_dash_app(data_warehouse_config_path)
+        App = make_dashboard_app(data_warehouse_config_path)
         App.app.run_server(debug=True, host='0.0.0.0')
     except Exception as e:
         logging.exception(e)
