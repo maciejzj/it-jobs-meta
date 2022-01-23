@@ -1,8 +1,8 @@
 import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-from functools import partial
 from enum import Enum, auto
+from functools import partial
 from pathlib import Path
 from typing import Optional, Type
 
@@ -10,31 +10,30 @@ import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import sqlalchemy as db
-from dash import dcc
-from dash import html
+from dash import dcc, html
 from dash.development import base_component as DashComponent
 from flask_caching import Cache as AppCache
 from plotly import graph_objects as go
 
 from common.utils import setup_logging
 from data_pipeline.data_warehouse import (
-    make_db_uri_from_config,
     load_warehouse_db_config,
+    make_db_uri_from_config,
 )
 
 from .dashboard_components import (
     CategoriesPieChart,
-    TechnologiesPieChart,
     CategoriesTechnologiesSankeyChart,
-    SeniorityPieChart,
-    SenioritiesHistogram,
+    ContractTypeViolinChart,
     RemotePieChart,
     SalariesMap,
     SalariesMapJunior,
     SalariesMapMid,
     SalariesMapSenior,
+    SenioritiesHistogram,
+    SeniorityPieChart,
+    TechnologiesPieChart,
     TechnologiesViolinChart,
-    ContractTypeViolinChart,
 )
 
 

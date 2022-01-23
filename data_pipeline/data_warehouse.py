@@ -1,13 +1,13 @@
-import re
 import dataclasses
+import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Generic, TypeVar
 
-import yaml
 import pandas as pd
 import sqlalchemy as db
+import yaml
 
 from .data_formats import NoFluffJObsPostingsData
 from .data_validation import Schemas

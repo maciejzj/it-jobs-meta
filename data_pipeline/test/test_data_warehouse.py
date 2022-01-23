@@ -1,14 +1,13 @@
 import math
 
-import pytest
 import pandas as pd
+import pytest
 
 from ..data_warehouse import (
     DataWarehouseDbConfig,
     EtlConstants,
     PandasEtlTransformationEngine,
 )
-
 
 POSTINGS_LIST_MOCK = [
     {

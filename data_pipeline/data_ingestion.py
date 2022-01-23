@@ -6,9 +6,9 @@ from abc import ABC, abstractmethod
 import requests
 
 from .data_formats import (
-    PostingsMetadata,
-    PostingsData,
     NoFluffJObsPostingsData,
+    PostingsData,
+    PostingsMetadata,
 )
 
 
