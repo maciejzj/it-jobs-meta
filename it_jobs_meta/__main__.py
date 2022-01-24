@@ -6,6 +6,7 @@ from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.dashboard.dashboard import run_dashboard
 from it_jobs_meta.data_pipeline.data_pipeline import run_data_pipeline
 
+
 it_jobs_app = typer.Typer()
 
 
