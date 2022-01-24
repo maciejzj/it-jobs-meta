@@ -439,7 +439,7 @@ def make_layout(dynamic_content: DynamicContent) -> DashComponent:
 def make_dash_app() -> dash.Dash:
     app = dash.Dash(
         'it-jobs-meta-dashboard',
-        assets_folder='dashboard/assets',
+        assets_folder='it_jobs_meta/dashboard/assets',
         external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
         title='IT Jobs Meta',
         meta_tags=[
