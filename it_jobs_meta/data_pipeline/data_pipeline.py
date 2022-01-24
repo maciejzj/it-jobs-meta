@@ -41,13 +41,11 @@ def run_ingest_data(
     return data_lake.get_data(data_key)
 
 
-def main():
+def run_data_pipeline(
+    data_lake_config_path: Path, data_warehouse_config_path: Path
+):
     try:
-        setup_logging()
         logging.info('Started data pipeline')
-
-        data_lake_config_path = Path('config/data_lake_db_config.yaml')
-        data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
 
         logging.info('Attempting to perform data ingestion step')
         data_source = NoFluffJobsPostingsDataSource
@@ -66,6 +64,13 @@ def main():
     except Exception as e:
         logging.exception(e)
         raise
+
+
+def main():
+    data_lake_config_path = Path('config/data_lake_db_config.yaml')
+    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
+    setup_logging()
+    run_data_pipeline(data_lake_config_path, data_warehouse_config_path)
 
 
 if __name__ == '__main__':

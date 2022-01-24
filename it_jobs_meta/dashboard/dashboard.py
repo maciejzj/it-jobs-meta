@@ -508,15 +508,20 @@ def make_dashboard_app(data_warehouse_config_path: Path) -> Type[App]:
     return App
 
 
-def main():
+def run_dashboard(data_warehouse_config_path: Path):
     try:
-        setup_logging()
-        data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
         App = make_dashboard_app(data_warehouse_config_path)
         App.app.run_server(debug=True, host='0.0.0.0')
     except Exception as e:
         logging.exception(e)
         raise
+
+
+def main():
+    setup_logging()
+
+    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
+    run_dashboard(data_warehouse_config_path)
 
 
 if __name__ == '__main__':
