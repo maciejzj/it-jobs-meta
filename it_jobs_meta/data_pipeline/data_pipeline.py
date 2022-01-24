@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 
-from common.utils import setup_logging
+from it_jobs_meta.common.utils import setup_logging
 
 from .data_ingestion import NoFluffJobsPostingsDataSource, PostingsDataSource
 from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config

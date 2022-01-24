@@ -15,8 +15,8 @@ from dash.development import base_component as DashComponent
 from flask_caching import Cache as AppCache
 from plotly import graph_objects as go
 
-from common.utils import setup_logging
-from data_pipeline.data_warehouse import (
+from it_jobs_meta.common.utils import setup_logging
+from it_jobs_meta.data_pipeline.data_warehouse import (
     load_warehouse_db_config,
     make_db_uri_from_config,
 )
