@@ -1,35 +1,39 @@
+import logging
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from enum import Enum, auto
+from functools import partial
 from pathlib import Path
+from typing import Optional, Type
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
 import sqlalchemy as db
-from dash import dcc
-from dash import html
+from dash import dcc, html
 from dash.development import base_component as DashComponent
+from flask_caching import Cache as AppCache
 from plotly import graph_objects as go
 
-from data_processing.data_warehouse import (
-    make_db_uri_from_config,
+from it_jobs_meta.common.utils import setup_logging
+from it_jobs_meta.data_pipeline.data_warehouse import (
     load_warehouse_db_config,
+    make_db_uri_from_config,
 )
 
 from .dashboard_components import (
     CategoriesPieChart,
-    TechnologiesPieChart,
     CategoriesTechnologiesSankeyChart,
-    SeniorityPieChart,
-    SenioritiesHistogram,
+    ContractTypeViolinChart,
     RemotePieChart,
     SalariesMap,
     SalariesMapJunior,
     SalariesMapMid,
     SalariesMapSenior,
+    SenioritiesHistogram,
+    SeniorityPieChart,
+    TechnologiesPieChart,
     TechnologiesViolinChart,
-    ContractTypeViolinChart,
 )
 
 
@@ -410,7 +414,7 @@ def make_footer() -> DashComponent:
     return footer
 
 
-def make_layout(dynamic_content: DynamicContent):
+def make_layout(dynamic_content: DynamicContent) -> DashComponent:
     layout = html.Div(
         children=[
             make_navbar(),
@@ -435,7 +439,7 @@ def make_layout(dynamic_content: DynamicContent):
 def make_dash_app() -> dash.Dash:
     app = dash.Dash(
         'it-jobs-meta-dashboard',
-        assets_folder='dashboard/assets',
+        assets_folder='it_jobs_meta/dashboard/assets',
         external_stylesheets=[dbc.themes.BOOTSTRAP, dbc.icons.FONT_AWESOME],
         title='IT Jobs Meta',
         meta_tags=[
@@ -450,16 +454,74 @@ def make_dash_app() -> dash.Dash:
     return app
 
 
-def main():
-    data_warehouse_config_path = Path(
-        'data_processing/config/warehouse_db_config.yaml'
+def make_app_cache(app: dash.Dash) -> AppCache:
+    cache = AppCache(
+        app.server,
+        config={
+            'CACHE_TYPE': 'filesystem',
+            'CACHE_DIR': '.cache',
+        },
     )
-    data = gather_data(data_warehouse_config_path)
-    dynamic_content = make_dynamic_content(data)
+    return cache
 
-    app = make_dash_app()
-    app.layout = make_layout(dynamic_content)
-    app.run_server(debug=True, host='0.0.0.0')
+
+class App:
+    cache_timeout_seconds: int = int(timedelta(seconds=30).total_seconds())
+    _app: Optional[dash.Dash] = None
+    _cache: Optional[AppCache] = None
+
+    @classmethod
+    @property
+    def app(cls) -> dash.Dash:
+        if cls._app is None:
+            cls._app = make_dash_app()
+        return cls._app
+
+    @classmethod
+    @property
+    def cache(cls) -> AppCache:
+        if cls._cache is None:
+            cls._cache = make_app_cache(cls.app)
+        return cls._cache
+
+
+@App.cache.memoize(timeout=App.cache_timeout_seconds)
+def render_dashboard(data_warehouse_config_path: Path) -> DashComponent:
+    logging.info('Rendering dashboard')
+    logging.info('Attempting to retrieve data from warehouse on startup')
+    data = gather_data(data_warehouse_config_path)
+    logging.info('Data retrieval succeeded')
+
+    logging.info('Making layout')
+    dynamic_content = make_dynamic_content(data)
+    layout = make_layout(dynamic_content)
+    logging.info('Making layout succeeded')
+    logging.info('Rendering dashboard succeeded')
+    return layout
+
+
+def make_dashboard_app(data_warehouse_config_path: Path) -> Type[App]:
+    App.app.layout = partial(
+        render_dashboard,
+        data_warehouse_config_path=data_warehouse_config_path,
+    )
+    return App
+
+
+def run_dashboard(data_warehouse_config_path: Path):
+    try:
+        App = make_dashboard_app(data_warehouse_config_path)
+        App.app.run_server(debug=True, host='0.0.0.0')
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def main():
+    setup_logging()
+
+    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
+    run_dashboard(data_warehouse_config_path)
 
 
 if __name__ == '__main__':

@@ -1,14 +1,14 @@
 """Job postings data ingestion and web scraping."""
 
-import datetime
+import datetime as dt
 from abc import ABC, abstractmethod
 
 import requests
 
 from .data_formats import (
-    PostingsMetadata,
-    PostingsData,
     NoFluffJObsPostingsData,
+    PostingsData,
+    PostingsMetadata,
 )
 
 
@@ -22,7 +22,7 @@ class PostingsDataSource(ABC):
 
 
 class NoFluffJobsPostingsDataSource(PostingsDataSource):
-    """Source of postings data scraped using postings REST api from No Fluff Jobs."""
+    """Source of postings data scraped using REST api from No Fluff Jobs."""
 
     POSTINGS_API_URL_SOURCE = 'https://nofluffjobs.com/api/posting'
     SOURCE_NAME = 'nofluffjobs'
@@ -32,7 +32,7 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
         """Get a snapshot of postings data from No Fluff Jobs in one batch."""
         response = requests.get(cls.POSTINGS_API_URL_SOURCE)
         raw_data = response.json()
-        datetime_now = datetime.datetime.now()
+        datetime_now = dt.datetime.now()
 
         metadata = PostingsMetadata(
             source_name=cls.SOURCE_NAME, obtained_datetime=datetime_now

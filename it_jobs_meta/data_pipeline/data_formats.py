@@ -1,7 +1,7 @@
 """Data containers and wrappers for data about job postings on the web."""
 
 import dataclasses
-import datetime
+import datetime as dt
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
@@ -13,7 +13,7 @@ class PostingsMetadata:
     """Metadata to describe a batch of job postings data ingested from web."""
 
     source_name: str
-    obtained_datetime: datetime.datetime
+    obtained_datetime: dt.datetime
 
 
 class PostingsData(ABC):
@@ -56,7 +56,7 @@ class PostingsData(ABC):
         The returned json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
-                'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
+                'obtained_datetime': Timestamp in format 'YYYY-MM-DD HH:MM:SS'.
             'data': Unmodified scraped data in format of a json string.
         """
 
@@ -86,7 +86,7 @@ class NoFluffJObsPostingsData(PostingsData):
         """
         data_dict = json.loads(json_str)
         source_name = data_dict['metadata']['source_name']
-        obtained_datetime = datetime.datetime.fromisoformat(
+        obtained_datetime = dt.datetime.fromisoformat(
             data_dict['metadata']['obtained_datetime']
         )
         metadata = PostingsMetadata(source_name, obtained_datetime)

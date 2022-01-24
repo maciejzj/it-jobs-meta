@@ -1,15 +1,15 @@
 import logging
-import sys
 from pathlib import Path
-from typing import Any, Dict
 
-from .data_ingestion import PostingsDataSource, NoFluffJobsPostingsDataSource
+from it_jobs_meta.common.utils import setup_logging
+
+from .data_ingestion import NoFluffJobsPostingsDataSource, PostingsDataSource
 from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
 from .data_warehouse import (
-    PandasEtlSqlLoadingEngine,
-    PandasEtlExtractionFromJsonStr,
-    PandasEtlTransformationEngine,
     EtlPipeline,
+    PandasEtlExtractionFromJsonStr,
+    PandasEtlSqlLoadingEngine,
+    PandasEtlTransformationEngine,
     load_warehouse_db_config,
 )
 
@@ -41,31 +41,10 @@ def run_ingest_data(
     return data_lake.get_data(data_key)
 
 
-def run_warehouse_data(data: str, data_warehouse_etl: EtlPipeline):
-    data_warehouse_etl.run(data)
-
-
-def setup_logging():
-    logging.basicConfig(
-        level=logging.INFO,
-        format="%(asctime)s [%(levelname)s] %(message)s",
-        handlers=[
-            logging.FileHandler("it_jobs_meta.log"),
-            logging.StreamHandler(sys.stdout),
-        ],
-    )
-
-
-def main():
+def run_data_pipeline(
+    data_lake_config_path: Path, data_warehouse_config_path: Path
+):
     try:
-        data_lake_config_path = Path(
-            'data_processing/config/data_lake_db_config.yaml'
-        )
-        dat_warehouse_config_path = Path(
-            'data_processing/config/warehouse_db_config.yaml'
-        )
-
-        setup_logging()
         logging.info('Started data pipeline')
 
         logging.info('Attempting to perform data ingestion step')
@@ -75,14 +54,23 @@ def main():
         logging.info('Data ingestion succeeded')
 
         logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = make_data_warehouse_etl(dat_warehouse_config_path)
-        run_warehouse_data(data, data_warehouse_etl)
+        data_warehouse_etl = make_data_warehouse_etl(
+            data_warehouse_config_path
+        )
+        data_warehouse_etl.run(data)
         logging.info('Data warehousing succeeded')
 
         logging.info('Data pipeline succeeded, exiting')
     except Exception as e:
         logging.exception(e)
         raise
+
+
+def main():
+    data_lake_config_path = Path('config/data_lake_db_config.yaml')
+    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
+    setup_logging()
+    run_data_pipeline(data_lake_config_path, data_warehouse_config_path)
 
 
 if __name__ == '__main__':

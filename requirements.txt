@@ -1,12 +1,14 @@
+dash
 dash-bootstrap-components
+flask-caching
 geopy
 numpy
 pandas
 pandera
-pylint
 pymysql
 pyyaml
 redis
 requests
 sklearn
 sqlalchemy
+typer
