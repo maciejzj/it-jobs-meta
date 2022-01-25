@@ -24,5 +24,9 @@ def dashboard(data_warehouse_config_path: Path):
     run_dashboard(data_warehouse_config_path)
 
 
-if __name__ == '__main__':
+def main():
     it_jobs_app()
+
+
+if __name__ == '__main__':
+    main()
