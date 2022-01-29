@@ -1,0 +1,8 @@
+*.tfvars
+.dockerignore
+.github
+.terraform
+.terraform*
+analysis
+docker-compose.yml
+terraform*

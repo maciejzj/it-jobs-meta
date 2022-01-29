@@ -12,3 +12,4 @@ requests
 sklearn
 sqlalchemy
 typer
+boto3
