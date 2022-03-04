@@ -8,6 +8,7 @@ from typing import Generic, TypeVar
 import pandas as pd
 import sqlalchemy as db
 import yaml
+import pymongo
 
 from .data_formats import NoFluffJObsPostingsData
 from .data_validation import Schemas
@@ -308,6 +309,61 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         data = data.replace('Nan', None)
         data = data.replace('nan', None)
         return data
+
+
+class PandasEtlNoSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
+    
+    POSTINGS_TABLE_COLS = [
+        'name',
+        'posted',
+        'title',
+        'technology',
+        'category',
+        'url',
+        'remote',
+        'city',
+        'seniority',
+        'contract_type',
+        'salary_min',
+        'salary_max',
+        'salary_mean',
+    ]
+
+    def __init__(self, db_config: DataWarehouseDbConfig):
+        print(make_db_uri_from_config(db_config))
+        self._db_client = pymongo.MongoClient('mongodb://root:example@localhost:27017')
+        self._db = self._db_client[db_config.db_name]
+
+    def load_tables_to_warehouse(
+        self, metadata: pd.DataFrame, data: pd.DataFrame
+    ):
+        self._db['postings'].drop()
+        self._db['postings'].insert_many(data.to_dict('records'))
+
+    def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        postings_df = data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
+        return Schemas.postings.validate(postings_df)
+
+    def prepare_salaries_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        salaries_df = data[EtlConstants.SALARIES_TABLE_COLS].reset_index()
+        return Schemas.salaries.validate(salaries_df)
+
+    def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        locations_df = data.explode('city')
+        locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
+            lambda city: pd.Series([city[0], city[1], city[2]])
+        )
+        locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
+        locations_df = locations_df.dropna().reset_index()
+        return Schemas.locations.validate(locations_df)
+
+    def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
+        seniority_df = data.explode('seniority')
+        seniority_df = seniority_df[
+            EtlConstants.SENIORITY_TABLE_COLS
+        ].reset_index()
+        return Schemas.seniorities.validate(seniority_df)
+
 
 
 class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):

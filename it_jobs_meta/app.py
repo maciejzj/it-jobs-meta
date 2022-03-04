@@ -1,32 +1,21 @@
+import logging
+
 from it_jobs_meta.data_pipeline.data_formats import NoFluffJObsPostingsData
+from it_jobs_meta.data_pipeline.data_pipeline import NoFluffJobsPostingsDataSource
 from it_jobs_meta.data_pipeline.data_warehouse import make_db_uri_from_config, DataWarehouseDbConfig
+from it_jobs_meta.data_pipeline.data_lake import S3DataLake
+from it_jobs_meta.data_pipeline.data_pipeline import run_ingest_data
 
 import boto3
 
 def lambda_handler(event, context):
+    logging.info('Started data pipeline')
+    logging.info('Attempting to perform data ingestion step')
+    data_source = NoFluffJobsPostingsDataSource
+    data_lake = S3DataLake()
+    data = run_ingest_data(data_source, data_lake)
+    logging.info('Data ingestion succeeded')
     
-    print('Lambda working')
-
-    string = "dfghj"
-    encoded_string = string.encode("utf-8")
-
-    bucket_name = "s3bucketitjobsmeta"
-    file_name = "hello.txt"
-    s3_path = "100001/20180223/" + file_name
-
-    s3 = boto3.resource("s3")
-    s3.Bucket(bucket_name).put_object(Key=s3_path, Body=encoded_string)
-
-    # c = DataWarehouseDbConfig(
-    #     'mysql',
-    #     'tmp',
-    #     'tmp',
-    #     ''
-    #     'tmp'
-    # )
-
-    # return create_engine(conn_str, connect_args=kw)
-
     return {
         'message': f'Hello AWS {NoFluffJObsPostingsData.__name__}'
     }

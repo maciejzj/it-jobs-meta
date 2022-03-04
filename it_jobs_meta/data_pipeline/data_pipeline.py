@@ -8,6 +8,7 @@ from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
 from .data_warehouse import (
     EtlPipeline,
     PandasEtlExtractionFromJsonStr,
+    PandasEtlNoSqlLoadingEngine,
     PandasEtlSqlLoadingEngine,
     PandasEtlTransformationEngine,
     load_warehouse_db_config,
@@ -23,7 +24,7 @@ def make_data_lake(data_lake_config_path: Path) -> DataLake:
 def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
     extracor = PandasEtlExtractionFromJsonStr()
     transformer = PandasEtlTransformationEngine()
-    loader = PandasEtlSqlLoadingEngine(
+    loader = PandasEtlNoSqlLoadingEngine(
         load_warehouse_db_config(data_warehouse_config_path)
     )
     data_warehouse_etl = EtlPipeline(extracor, transformer, loader)

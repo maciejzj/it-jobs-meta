@@ -123,6 +123,7 @@ class SeniorityPieChart:
 
     @classmethod
     def make_fig(cls, seniorities_df: pd.DataFrame) -> go.Figure:
+        seniorities_df = seniorities_df.explode('seniority')
         fig = px.pie(seniorities_df, names='seniority', title=cls.TITLE)
         fig = center_title(fig)
         return fig
@@ -134,9 +135,10 @@ class SenioritiesHistogram:
 
     @classmethod
     def make_fig(
-        cls, seniorities_df: pd.DataFrame, salaries_df: pd.DataFrame
+        cls, df 
     ) -> go.Figure:
-        sen_sal_df = seniorities_df.merge(salaries_df, on='id')
+        # sen_sal_df = seniorities_df.merge(salaries_df, on='id')
+        sen_sal_df = df.explode('seniority')
         sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] < cls.MAX_SALARY]
         sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] > 0]
 
@@ -170,16 +172,15 @@ class SalariesMap:
 
     @classmethod
     def make_fig(
-        cls, locations_df: pd.DataFrame, salaries_df: pd.DataFrame
+        cls, prep_df
     ) -> go.Figure:
 
-        loc_sal_df = locations_df.merge(salaries_df, on='id')
-        job_counts = loc_sal_df.groupby('city')['id'].count()
-        job_counts = job_counts.rename('job_counts')
+        cities_df = prep_df.explode('city')
+        cities_df[['city', 'lat', 'lon']] = cities_df['city'].transform(lambda city: pd.Series([city[0], city[1], city[2]]))
 
-        salaries = loc_sal_df.groupby('city')[['salary_mean', 'lat', 'lon']]
-        salaries = salaries.mean()
-        cities_salaries = pd.concat([job_counts, salaries], axis=1)
+        job_counts = cities_df.groupby('city')['_id'].count()
+        salaries = cities_df.groupby('city')[['salary_mean', 'lat', 'lon']].mean()
+        cities_salaries = pd.concat([job_counts.rename('job_counts'), salaries], axis=1)
         more_than_min = cities_salaries['job_counts'] > cls.MIN_CITY_FREQ
         cities_salaries = cities_salaries[more_than_min]
         cities_salaries = cities_salaries.reset_index()
@@ -204,16 +205,14 @@ class SalariesMapFilteredBySeniority:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        df,
         seniority: str,
     ) -> go.Figure:
 
-        loc_sen_df = locations_df.merge(seniorities_df, on='id')
+        loc_sen_df = df.explode('seniority')
         loc_sen_df = loc_sen_df[loc_sen_df['seniority'] == seniority]
 
-        fig = SalariesMap.make_fig(loc_sen_df, salaries_df)
+        fig = SalariesMap.make_fig(loc_sen_df)
         return fig
 
 
@@ -223,13 +222,11 @@ class SalariesMapJunior:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        df,
     ) -> go.Figure:
 
         fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Junior'
+            df, 'Junior'
         )
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
@@ -243,13 +240,11 @@ class SalariesMapMid:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        df,
     ) -> go.Figure:
 
         fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Mid'
+           df, 'Mid'
         )
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
@@ -263,13 +258,11 @@ class SalariesMapSenior:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        df
     ) -> go.Figure:
 
         fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Senior'
+            df, 'Senior'
         )
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
@@ -284,19 +277,16 @@ class SalariesSenioritiesMapChart:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        df
     ) -> go.Figure:
 
-        loc_sal_df = locations_df.merge(salaries_df, on='id')
-        lss_df = loc_sal_df.merge(seniorities_df, on='id')
+        lss_df = df.explode('city').explode('salary')
 
         lss_df = lss_df[lss_df['seniority'].isin(('Junior', 'Mid', 'Senior'))]
         salaries = lss_df.groupby(['seniority', 'city'])[
             ['salary_mean', 'lat', 'lon']
         ].mean()
-        job_counts = lss_df.groupby(['seniority', 'city'])['id'].count()
+        job_counts = lss_df.groupby(['seniority', 'city'])['_id'].count()
         jobs_cities_salaries = pd.concat(
             [salaries, job_counts.rename('job_counts')], axis=1
         ).reset_index()
@@ -326,13 +316,10 @@ class TechnologiesViolinChart:
     @classmethod
     def make_fig(
         cls,
-        postings_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        senorities_df: pd.DataFrame,
+        df,
     ) -> go.Figure:
 
-        pos_sal_df = postings_df.merge(salaries_df, on='id')
-        pss_df = pos_sal_df.merge(senorities_df, on='id')
+        pss_df = df.explode('seniority')
         tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
             pss_df, 'technology', cls.N_MOST_FREQ_TECH
         )
@@ -370,9 +357,9 @@ class ContractTypeViolinChart:
 
     @classmethod
     def make_fig(
-        cls, postings_df: pd.DataFrame, salaries_df: pd.DataFrame
+        cls, df
     ) -> go.Figure:
-        pos_sal_df = postings_df.merge(salaries_df, on='id')
+        pos_sal_df = df
         tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
             pos_sal_df, 'technology', cls.N_MOST_FREQ_TECH
         )

@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
 
+import boto3
 import redis
 import yaml
 
@@ -57,3 +58,15 @@ class RedisDataLake(DataLake):
         if data is None:
             raise KeyError(f'No data stored in db under key: {key}')
         return data
+
+class S3DataLake(DataLake):
+    def __init__(self):
+        bucket_name = 's3bucketitjobsmeta'
+        s3 = boto3.resource("s3")
+        self._bucket = s3.Bucket(bucket_name)
+
+    def set_data(self, key, data):
+        self._bucket.put_object(Key=key, Body=data.encode('utf-8'))
+
+    def get_data(self, key):
+        raise NotImplemented()

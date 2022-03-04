@@ -9,6 +9,7 @@ from typing import Optional, Type
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
+import pymongo
 import sqlalchemy as db
 from dash import dcc, html
 from dash.development import base_component as DashComponent
@@ -91,12 +92,11 @@ def gather_data(
     data_warehouse_config_path: Path,
 ) -> dict[TableNames, pd.DataFrame]:
     db_config = load_warehouse_db_config(data_warehouse_config_path)
-    db_con = db.create_engine(make_db_uri_from_config(db_config))
+    # db_con = db.create_engine(make_db_uri_from_config(db_config))
+    db_c = pymongo.MongoClient('mongodb://root:example@localhost:27017')
+    db = db_c[db_config.db_name]
 
-    data_tables = {}
-    for table_name in TableNames:
-        data_tables[table_name] = pd.read_sql_table(table_name.value, db_con)
-    return data_tables
+    return pd.json_normalize(db['postings'].find())
 
 
 def make_graphs(
@@ -104,64 +104,40 @@ def make_graphs(
 ) -> dict[Graphs, go.Figure]:
     graphs = {
         Graphs.CATEGORIES_PIE_CHART: dcc.Graph(
-            figure=CategoriesPieChart.make_fig(data[TableNames.POSTINGS])
+            figure=CategoriesPieChart.make_fig(data)
         ),
         Graphs.TECHNOLOGIES_PIE_CHART: dcc.Graph(
-            figure=TechnologiesPieChart.make_fig(data[TableNames.POSTINGS])
+            figure=TechnologiesPieChart.make_fig(data)
         ),
         Graphs.CAT_TECH_SANKEY_CHART: dcc.Graph(
-            figure=CategoriesTechnologiesSankeyChart.make_fig(
-                data[TableNames.POSTINGS]
-            )
+            figure=CategoriesTechnologiesSankeyChart.make_fig(data)
         ),
         Graphs.SENIORITY_PIE_CHART: dcc.Graph(
-            figure=SeniorityPieChart.make_fig(data[TableNames.SENIORITIES])
+            figure=SeniorityPieChart.make_fig(data)
         ),
         Graphs.SENIORITIES_HISTOGRAM: dcc.Graph(
-            figure=SenioritiesHistogram.make_fig(
-                data[TableNames.SENIORITIES], data[TableNames.SALARIES]
-            )
+            figure=SenioritiesHistogram.make_fig(data)
         ),
         Graphs.REMOTE_PIE_CHART: dcc.Graph(
-            figure=RemotePieChart.make_fig(data[TableNames.POSTINGS])
+            figure=RemotePieChart.make_fig(data)
         ),
         Graphs.SALARIES_MAP_JUNIOR: dcc.Graph(
-            figure=SalariesMapJunior.make_fig(
-                data[TableNames.LOCATIONS],
-                data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES],
-            )
+            figure=SalariesMapJunior.make_fig(data)
         ),
         Graphs.SALARIES_MAP_MID: dcc.Graph(
-            figure=SalariesMapMid.make_fig(
-                data[TableNames.LOCATIONS],
-                data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES],
-            )
+            figure=SalariesMapMid.make_fig(data)
         ),
         Graphs.SALARIES_MAP_SENIOR: dcc.Graph(
-            figure=SalariesMapSenior.make_fig(
-                data[TableNames.LOCATIONS],
-                data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES],
-            )
+            figure=SalariesMapSenior.make_fig( data)
         ),
         Graphs.SALARIES_MAP: dcc.Graph(
-            figure=SalariesMap.make_fig(
-                data[TableNames.LOCATIONS], data[TableNames.SALARIES]
-            )
+            figure=SalariesMap.make_fig( data)
         ),
         Graphs.TECHNOLOGIES_VIOLIN_PLOT: dcc.Graph(
-            figure=TechnologiesViolinChart.make_fig(
-                data[TableNames.POSTINGS],
-                data[TableNames.SALARIES],
-                data[TableNames.SENIORITIES],
-            )
+            figure=TechnologiesViolinChart.make_fig( data)
         ),
         Graphs.CONTRACT_TYPE_VIOLIN_PLOT: dcc.Graph(
-            figure=ContractTypeViolinChart.make_fig(
-                data[TableNames.POSTINGS], data[TableNames.SALARIES]
-            )
+            figure=ContractTypeViolinChart.make_fig( data)
         ),
     }
     return graphs
@@ -170,9 +146,10 @@ def make_graphs(
 def make_dynamic_content(
     data: dict[TableNames, pd.DataFrame]
 ) -> DynamicContent:
-    obtained_datetime = pd.to_datetime(
-        data[TableNames.METADATA]['obtained_datetime'][0]
-    )
+    obtained_datetime = datetime.now()
+    # pd.to_datetime(
+    #     data[TableNames.METADATA]['obtained_datetime'][0]
+    # )
     graphs = make_graphs(data)
     return DynamicContent(obtained_datetime=obtained_datetime, graphs=graphs)
 
