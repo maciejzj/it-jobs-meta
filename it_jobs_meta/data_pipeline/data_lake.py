@@ -59,6 +59,7 @@ class RedisDataLake(DataLake):
             raise KeyError(f'No data stored in db under key: {key}')
         return data
 
+
 class S3DataLake(DataLake):
     def __init__(self):
         bucket_name = 's3bucketitjobsmeta'

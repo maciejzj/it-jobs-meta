@@ -1,5 +1,5 @@
 protocol_name: 'mongodb'
 user_name: 'root'
 password: 'example'
-host_address: '0.0.0.0'
+host_address: 'localhost'
 db_name: 'it_jobs_meta_datawarehouse'

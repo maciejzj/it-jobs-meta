@@ -5,7 +5,7 @@ import pytest
 
 from ..data_warehouse import (
     DataWarehouseDbConfig,
-    EtlConstants,
+    EtlTransformationEngine,
     PandasEtlTransformationEngine,
 )
 
@@ -99,7 +99,7 @@ class TestHappyPathPandasDataWarehouseETL:
 
     def test_drops_unwanted_cols_correctly(self):
         result = self.transformer.drop_unwanted(self.df)
-        for key in EtlConstants.COLS_TO_DROP:
+        for key in EtlTransformationEngine.COLS_TO_DROP:
             assert key not in result
 
     def test_extracts_remote_correclty(self):
