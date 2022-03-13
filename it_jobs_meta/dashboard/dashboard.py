@@ -50,10 +50,9 @@ class MongoDbDashboardDataProvider(DashboardDataProvider):
         self._db = self._db_client[db_name]
 
     def gather_data(self) -> GatheredData:
-        return GatheredData(
-            metadata=pd.json_normalize(self._db['metadata'].find()),
-            postings=pd.json_normalize(self._db['postings'].find()),
-        )
+        metadata_df = pd.json_normalize(self._db['metadata'].find())
+        postings_df = pd.json_normalize(self._db['postings'].find())
+        return GatheredData(metadata=metadata_df, postings=postings_df)
 
 
 def gather_data(

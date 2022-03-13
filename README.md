@@ -11,3 +11,11 @@ pip install dist/it_jobs_meta-<version>-py3-none-any.whl
 ```
 
 Then the program can be run with: `python -m it-jobs-meta ...`
+
+Fast TODO:
+- [x] Database configs?
+- [x] Cleanup graphs (var names, graph gather, type hints)
+- [ ] CLI selection + empty AWS options
+- [ ] Cleanup Jupyter
+- [ ] Cleanup proj
+- [ ] Maybe AWS

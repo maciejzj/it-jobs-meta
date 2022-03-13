@@ -9,7 +9,8 @@ pymysql
 pyyaml
 redis
 requests
+pymongo
 sklearn
 sqlalchemy
-typer
 boto3
+croniter

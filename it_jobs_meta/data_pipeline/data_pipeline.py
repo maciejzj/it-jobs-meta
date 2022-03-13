@@ -1,8 +1,12 @@
 import logging
+import datetime as dt
 from pathlib import Path
+from time import sleep
+
+
+import croniter
 
 from it_jobs_meta.common.utils import setup_logging
-
 from .data_ingestion import NoFluffJobsPostingsDataSource, PostingsDataSource
 from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
 from .data_warehouse import (
@@ -67,6 +71,43 @@ def run_data_pipeline(
     except Exception as e:
         logging.exception(e)
         raise
+
+
+def run_data_pipeline_f(
+    data_lake_factory, etl_factory, data_lake_config_path: Path, data_warehouse_config_path: Path
+):
+    try:
+        logging.info('Started data pipeline')
+
+        logging.info('Attempting to perform data ingestion step')
+        data_source = NoFluffJobsPostingsDataSource
+        data_lake = data_lake_factory.make(data_lake_config_path)
+        data = run_ingest_data(data_source, data_lake)
+        logging.info('Data ingestion succeeded')
+
+        logging.info('Attempting to perform data warehousing step')
+        data_warehouse_etl = etl_factory.make(data_warehouse_config_path)
+        data_warehouse_etl.run(data)
+        logging.info('Data warehousing succeeded')
+
+        logging.info('Data pipeline succeeded, exiting')
+    except Exception as e:
+        logging.exception(e)
+        raise
+
+
+def run_pipeline_in_schedule(
+    cron_expression: str, data_lake_factory, etl_factory, data_lake_config_path: Path, data_warehouse_config_path: Path):
+
+    now = dt.datetime.now()
+    cron = croniter.croniter(cron_expression, now)
+
+    while True:
+        run_data_pipeline_f(data_lake_factory, etl_factory, data_lake_config_path, data_warehouse_config_path)
+
+        now = dt.datetime.now()
+        timedelta_till_next_trigger = cron.get_next(dt.datetime) - now
+        sleep(timedelta_till_next_trigger.total_seconds())
 
 
 def main():
