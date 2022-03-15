@@ -4,11 +4,9 @@ html {
 
 p a {
     color: rgb(33, 37, 41);
-    text-decoration: none;
     font-weight: bold;
 }
 
 p a:hover {
     color: rgb(33, 37, 41);
-    text-decoration: underline;
 }

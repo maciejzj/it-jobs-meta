@@ -1,120 +1,86 @@
-import logging
 import datetime as dt
+import logging
 from pathlib import Path
 from time import sleep
-
+from typing import Optional
 
 import croniter
 
 from it_jobs_meta.common.utils import setup_logging
-from .data_ingestion import NoFluffJobsPostingsDataSource, PostingsDataSource
-from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
-from .data_warehouse import (
-    EtlPipeline,
-    PandasEtlExtractionFromJsonStr,
-    PandasEtlNoSqlLoadingEngine,
-    PandasEtlSqlLoadingEngine,
-    PandasEtlTransformationEngine,
-    load_warehouse_db_config,
-)
+
+from .data_ingestion import NoFluffJobsPostingsDataSource
 
 
-def make_data_lake(data_lake_config_path: Path) -> DataLake:
-    data_lake_config = load_data_lake_db_config(data_lake_config_path)
-    data_lake = RedisDataLake(data_lake_config)
-    return data_lake
+class DataPipeline:
+    def __init__(
+        self,
+        data_lake_factory,
+        data_lake_config_path,
+        etl_factory,
+        data_warehouse_config_path,
+    ):
+        self._data_lake_factory = data_lake_factory
+        self._data_lake_config_path = data_lake_config_path
+        self._etl_factory = etl_factory
+        self._data_warehouse_config_path = data_warehouse_config_path
 
+    def schedule(self, cron_expression: Optional[str] = None):
+        logging.info(
+            f'Data pipeline scheduled with cron expression: "{cron_expression}", (if None, will run once) send SIGINT to stop'
+        )
+        self.run()
 
-def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
-    extracor = PandasEtlExtractionFromJsonStr()
-    transformer = PandasEtlTransformationEngine()
-    db_conf = load_warehouse_db_config(data_warehouse_config_path)
-    loader = PandasEtlNoSqlLoadingEngine(
-        user_name=db_conf.user_name,
-        password=db_conf.password,
-        host=db_conf.host_address,
-        db_name=db_conf.db_name,
-    )
-    data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
-    return data_warehouse_etl
+        if cron_expression is not None:
+            now = dt.datetime.now()
+            cron = croniter.croniter(cron_expression, now)
 
+            try:
+                while True:
+                    self.run()
+                    now = dt.datetime.now()
+                    timedelta_till_next_trigger = (
+                        cron.get_next(dt.datetime) - now
+                    )
+                    sleep(timedelta_till_next_trigger.total_seconds())
+            except KeyboardInterrupt:
+                logging.info(f'Data pipeline loop interrupted by user`')
 
-def run_ingest_data(
-    data_source: PostingsDataSource, data_lake: DataLake
-) -> str:
+    def run(self):
+        try:
+            logging.info('Started data pipeline')
 
-    data = data_source.get()
-    data_key = data.make_key_for_data()
-    json_data_string = data.make_json_str_from_data()
-    data_lake.set_data(data_key, json_data_string)
-    return data_lake.get_data(data_key)
+            logging.info('Attempting to perform data ingestion step')
+            data = NoFluffJobsPostingsDataSource.get()
+            logging.info('Data ingestion succeeded')
 
+            logging.info('Attempting to archive raw data in data lake')
+            data_lake = self._data_lake_factory.make(
+                self._data_lake_config_path
+            )
+            data_key = data.make_key_for_data()
+            data_as_json = data.make_json_str_from_data()
+            data_lake.set_data(data_key, data.make_json_str_from_data())
+            logging.info(
+                f'Data archival succeeded, stored under "{data_key}" key'
+            )
 
-def run_data_pipeline(
-    data_lake_config_path: Path, data_warehouse_config_path: Path
-):
-    try:
-        logging.info('Started data pipeline')
+            logging.info('Attempting to perform data warehousing step')
+            data_warehouse_etl = self._etl_factory.make(
+                self._data_warehouse_config_path
+            )
+            data_warehouse_etl.run(data_as_json)
+            logging.info('Data warehousing succeeded')
 
-        logging.info('Attempting to perform data ingestion step')
-        data_source = NoFluffJobsPostingsDataSource
-        data_lake = make_data_lake(data_lake_config_path)
-        data = run_ingest_data(data_source, data_lake)
-        logging.info('Data ingestion succeeded')
-
-        logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = make_data_warehouse_etl(data_warehouse_config_path)
-        data_warehouse_etl.run(data)
-        logging.info('Data warehousing succeeded')
-
-        logging.info('Data pipeline succeeded, exiting')
-    except Exception as e:
-        logging.exception(e)
-        raise
-
-
-def run_data_pipeline_f(
-    data_lake_factory, etl_factory, data_lake_config_path: Path, data_warehouse_config_path: Path
-):
-    try:
-        logging.info('Started data pipeline')
-
-        logging.info('Attempting to perform data ingestion step')
-        data_source = NoFluffJobsPostingsDataSource
-        data_lake = data_lake_factory.make(data_lake_config_path)
-        data = run_ingest_data(data_source, data_lake)
-        logging.info('Data ingestion succeeded')
-
-        logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = etl_factory.make(data_warehouse_config_path)
-        data_warehouse_etl.run(data)
-        logging.info('Data warehousing succeeded')
-
-        logging.info('Data pipeline succeeded, exiting')
-    except Exception as e:
-        logging.exception(e)
-        raise
-
-
-def run_pipeline_in_schedule(
-    cron_expression: str, data_lake_factory, etl_factory, data_lake_config_path: Path, data_warehouse_config_path: Path):
-
-    now = dt.datetime.now()
-    cron = croniter.croniter(cron_expression, now)
-
-    while True:
-        run_data_pipeline_f(data_lake_factory, etl_factory, data_lake_config_path, data_warehouse_config_path)
-
-        now = dt.datetime.now()
-        timedelta_till_next_trigger = cron.get_next(dt.datetime) - now
-        sleep(timedelta_till_next_trigger.total_seconds())
+            logging.info('Data pipeline succeeded')
+        except Exception as e:
+            logging.exception(e)
+            raise
 
 
 def main():
     data_lake_config_path = Path('config/data_lake_db_config.yaml')
     data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
     setup_logging()
-    run_data_pipeline(data_lake_config_path, data_warehouse_config_path)
 
 
 if __name__ == '__main__':

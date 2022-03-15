@@ -3,17 +3,14 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Any
 
 import boto3
 import redis
-import yaml
+from redis import Redis
+from typing_extensions import Self
 
-
-@dataclass
-class DataLakeDbConfig:
-    password: str
-    host_address: str
-    db_num: int
+from it_jobs_meta.common.utils import load_yaml_as_dict
 
 
 class DataLake(ABC):
@@ -28,12 +25,6 @@ class DataLake(ABC):
         """Get data stored under key. Data is assumed ot be json string."""
 
 
-def load_data_lake_db_config(path: Path) -> DataLakeDbConfig:
-    with open(path, 'r', encoding='UTF-8') as cfg_file:
-        cfg_dict = yaml.safe_load(cfg_file)
-        return DataLakeDbConfig(**cfg_dict)
-
-
 class RedisDataLake(DataLake):
     """Key-value object storage using Redis.
 
@@ -41,12 +32,12 @@ class RedisDataLake(DataLake):
     since Redis is not the main joice for data lakes.
     """
 
-    def __init__(self, db_config: DataLakeDbConfig):
-        self._db = redis.Redis(
-            host=db_config.host_address,
-            password=db_config.password,
-            db=db_config.db_num,
-        )
+    def __init__(self, password: str, host_address: str, db_num: str):
+        self._db = redis.Redis(host=host_address, password=password, db=db_num)
+
+    @classmethod
+    def from_config_file(cls, config_file_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_file_path))
 
     def set_data(self, key: str, data: str):
         """Store data under key. Data is assumed to be json string."""
@@ -61,13 +52,16 @@ class RedisDataLake(DataLake):
 
 
 class S3DataLake(DataLake):
-    def __init__(self):
-        bucket_name = 's3bucketitjobsmeta'
+    def __init__(self, bucket_name: str):
         s3 = boto3.resource("s3")
         self._bucket = s3.Bucket(bucket_name)
 
-    def set_data(self, key, data):
+    @classmethod
+    def from_config_file(cls, config_file_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_file_path))
+
+    def set_data(self, key: str, data: str):
         self._bucket.put_object(Key=key, Body=data.encode('utf-8'))
 
-    def get_data(self, key):
+    def get_data(self, key: str) -> str:
         raise NotImplemented()

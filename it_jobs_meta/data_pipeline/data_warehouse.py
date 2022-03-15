@@ -3,29 +3,23 @@ import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from pathlib import Path
+from time import clock_settime
 from typing import Generic, TypeVar
 
 import pandas as pd
+import pymongo
 import sqlalchemy as db
 import yaml
-import pymongo
+from typing_extensions import Self
+
+from it_jobs_meta.common.utils import load_yaml_as_dict
 
 from .data_formats import NoFluffJObsPostingsData
 from .data_validation import Schemas
 from .geolocator import Geolocator
 
-
 DataType = TypeVar('DataType')
 PipelineInputType = TypeVar('PipelineInputType')
-
-
-@dataclass
-class DataWarehouseDbConfig:
-    protocol_name: str
-    user_name: str
-    password: str
-    host_address: str
-    db_name: str
 
 
 class EtlExtractionEngine(Generic[PipelineInputType, DataType], ABC):
@@ -149,20 +143,6 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
 
     def load(self, metadata: DataType, data: DataType):
         self._loading_engine.load_tables_to_warehouse(metadata, data)
-
-
-def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
-    ret = (
-        f'{config.protocol_name}://{config.user_name}:{config.password}'
-        f'@{config.host_address}/{config.db_name}'
-    )
-    return ret
-
-
-def load_warehouse_db_config(path: Path) -> DataWarehouseDbConfig:
-    with open(path, 'r', encoding='UTF-8') as cfg_file:
-        cfg_dict = yaml.safe_load(cfg_file)
-        return DataWarehouseDbConfig(**cfg_dict)
 
 
 class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
@@ -291,6 +271,10 @@ class PandasEtlNoSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         )
         self._db = self._db_client[db_name]
 
+    @classmethod
+    def from_config_file(cls, config_file_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_file_path))
+
     def load_tables_to_warehouse(
         self, metadata: pd.DataFrame, data: pd.DataFrame
     ):
@@ -327,13 +311,20 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
 
     SENIORITY_TABLE_COLS = ['seniority']
 
-    def __init__(self, db_config: DataWarehouseDbConfig):
-        self._db_con = db.create_engine(make_db_uri_from_config(db_config))
+    def __init__(
+        self, user_name: str, password: str, host: str, db_name: str, port=3306
+    ):
+        self._db_con = db.create_engine(
+            f'mysql+pymysql://{user_name}:{password}@{host}:{port}/{db_name}'
+        )
+
+    @classmethod
+    def from_config_file(cls, config_file_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_file_path))
 
     def load_tables_to_warehouse(
         self, metadata: pd.DataFrame, data: pd.DataFrame
     ):
-
         metadata.to_sql('metadata', con=self._db_con, if_exists='replace')
 
         postings_df = self.prepare_postings_table(data)
