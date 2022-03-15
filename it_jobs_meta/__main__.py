@@ -30,7 +30,7 @@ def main():
                 provider_type, provider_cfg_path
             )
             app = DashboardApp(data_warehouse_factory)
-            app.run(with_wsgi=True)
+            app.run(parser.args['with_wsgi'])
 
 
 if __name__ == '__main__':

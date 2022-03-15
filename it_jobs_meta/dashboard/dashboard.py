@@ -119,7 +119,7 @@ def main():
         DashboardProviders.MONGODB, data_warehouse_config_path
     )
     app = DashboardApp(data_warehouse_factory, cache_timeout=timedelta(seconds=30))
-    app.run(with_wsgi=True)
+    app.run()
 
 
 if __name__ == '__main__':

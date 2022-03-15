@@ -155,6 +155,10 @@ class CliArgumentParser:
     def _build_dashboard_command(self):
         parser_dashboard = self._subparsers.add_parser('dashboard')
 
+        parser_dashboard.add_argument(
+            '-w', '--with-wsgi', action='store_true', default=False
+        )
+
         data_warehouse_arg_grp = parser_dashboard.add_mutually_exclusive_group(
             required=True
         )
