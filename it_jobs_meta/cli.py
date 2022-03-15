@@ -12,7 +12,7 @@ from it_jobs_meta.dashboard.dashboard import (
     DashboardProviders,
     DashboardDataProviderFactory,
 )
-from it_jobs_meta.data_pipeline.data_lake import RedisDataLake, S3DataLake
+from it_jobs_meta.data_pipeline.data_lake import RedisDataLake, S3DataLake, DataLakes
 from it_jobs_meta.data_pipeline.data_pipeline import DataPipeline
 from it_jobs_meta.data_pipeline.data_warehouse import (
     EtlPipeline,
@@ -20,57 +20,8 @@ from it_jobs_meta.data_pipeline.data_warehouse import (
     PandasEtlNoSqlLoadingEngine,
     PandasEtlSqlLoadingEngine,
     PandasEtlTransformationEngine,
+    EtlLoaders,
 )
-
-
-class DataLakes(Enum):
-    redis = auto()
-    s3bucket = auto()
-
-
-class DataLakeFactory:
-    def __init__(self, kind: DataLakes):
-        self.kind = kind
-
-    def make(self, config_path: Path):
-        match self.kind:
-            case DataLakes.redis:
-                return RedisDataLake.from_config_file(config_path)
-            case DataLakes.s3bucket:
-                return S3DataLake.from_config_file(config_path)
-            case _:
-                raise ValueError(
-                    'Selected data lake implementation is not supported or invalid'
-                )
-
-
-class DataWarehouses(Enum):
-    MONGODB = auto()
-    SQL = auto()
-
-
-class EtlPipelineFactory:
-    def __init__(self, kind: DataLakes):
-        self.kind = kind
-
-    def make(self, config_path: Path):
-        match self.kind:
-            case DataWarehouses.MONGODB:
-                extracor = PandasEtlExtractionFromJsonStr()
-                transformer = PandasEtlTransformationEngine()
-                loader = PandasEtlNoSqlLoadingEngine.from_config_file(
-                    config_path
-                )
-                return EtlPipeline(extracor, transformer, loader)
-            case DataWarehouses.SQL:
-                extracor = PandasEtlExtractionFromJsonStr()
-                transformer = PandasEtlTransformationEngine()
-                loader = PandasEtlSqlLoadingEngine.from_config_file(config_path)
-                return EtlPipeline(extracor, transformer, loader)
-            case _:
-                raise ValueError(
-                    'Selected data lake implementation is not supported or invalid'
-                )
 
 
 class CliArgumentParser:
@@ -99,12 +50,12 @@ class CliArgumentParser:
                     'Parsed arguments resulted in unsupported or invalid data lake configuration'
                 )
 
-    def extract_data_warehouse(self) -> tuple[DataWarehouses, Path]:
+    def extract_data_warehouse(self) -> tuple[EtlLoaders, Path]:
         match self.args:
             case {'mongodb': Path(), 'sql': None}:
-                return DataWarehouses.MONGODB, self.args['mongodb']
+                return EtlLoaders.MONGODB, self.args['mongodb']
             case {'sql': Path(), 'mongodb': None}:
-                return DataWarehouses.SQL, self.args['sql']
+                return EtlLoaders.SQL, self.args['sql']
             case _:
                 raise ValueError(
                     'Parsed arguments resulted in unsupported or invalid data warehouse configuration'
@@ -120,7 +71,9 @@ class CliArgumentParser:
                 )
 
     def _build_main_command(self):
-        self._parser.add_argument('-l', '--log-path', default=Path('var/it_jobs_meta.log'), type=Path)
+        self._parser.add_argument(
+            '-l', '--log-path', default=Path('var/it_jobs_meta.log'), type=Path
+        )
 
     def _build_pipeline_command(self):
         parser_pipeline = self._subparsers.add_parser('pipeline')

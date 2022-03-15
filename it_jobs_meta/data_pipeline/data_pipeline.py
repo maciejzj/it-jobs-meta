@@ -7,6 +7,13 @@ from typing import Optional
 import croniter
 
 from it_jobs_meta.common.utils import setup_logging
+from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
+from it_jobs_meta.data_pipeline.data_warehouse import (
+    EtlPipeline,
+    PandasEtlExtractionFromJsonStr,
+    PandasEtlTransformationEngine,
+    EtlLoaderFactory,
+)
 
 from .data_ingestion import NoFluffJobsPostingsDataSource
 
@@ -14,15 +21,11 @@ from .data_ingestion import NoFluffJobsPostingsDataSource
 class DataPipeline:
     def __init__(
         self,
-        data_lake_factory,
-        data_lake_config_path,
-        etl_factory,
-        data_warehouse_config_path,
+        data_lake_factory: DataLakeFactory,
+        etl_loader_factory: EtlLoaderFactory,
     ):
         self._data_lake_factory = data_lake_factory
-        self._data_lake_config_path = data_lake_config_path
-        self._etl_factory = etl_factory
-        self._data_warehouse_config_path = data_warehouse_config_path
+        self._etl_loader_factory = etl_loader_factory
 
     def schedule(self, cron_expression: Optional[str] = None):
         logging.info(
@@ -54,9 +57,8 @@ class DataPipeline:
             logging.info('Data ingestion succeeded')
 
             logging.info('Attempting to archive raw data in data lake')
-            data_lake = self._data_lake_factory.make(
-                self._data_lake_config_path
-            )
+            data_lake = self._data_lake_factory.make()
+
             data_key = data.make_key_for_data()
             data_as_json = data.make_json_str_from_data()
             data_lake.set_data(data_key, data.make_json_str_from_data())
@@ -65,8 +67,10 @@ class DataPipeline:
             )
 
             logging.info('Attempting to perform data warehousing step')
-            data_warehouse_etl = self._etl_factory.make(
-                self._data_warehouse_config_path
+            data_warehouse_etl = EtlPipeline(
+                PandasEtlExtractionFromJsonStr(),
+                PandasEtlTransformationEngine(),
+                self._etl_loader_factory.make()
             )
             data_warehouse_etl.run(data_as_json)
             logging.info('Data warehousing succeeded')

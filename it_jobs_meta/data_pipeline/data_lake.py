@@ -2,6 +2,7 @@
 
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from typing import Any
 
@@ -65,3 +66,25 @@ class S3DataLake(DataLake):
 
     def get_data(self, key: str) -> str:
         raise NotImplemented()
+
+
+class DataLakes(Enum):
+    redis = auto()
+    s3bucket = auto()
+
+
+class DataLakeFactory:
+    def __init__(self, kind: DataLakes, config_path: Path):
+        self._kind = kind
+        self._config_path = config_path
+
+    def make(self):
+        match self._kind:
+            case DataLakes.redis:
+                return RedisDataLake.from_config_file(self._config_path)
+            case DataLakes.s3bucket:
+                return S3DataLake.from_config_file(self._config_path)
+            case _:
+                raise ValueError(
+                    'Selected data lake implementation is not supported or invalid'
+                )

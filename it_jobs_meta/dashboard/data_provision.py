@@ -10,6 +10,7 @@ import pandas as pd
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
 
+
 @dataclass
 class GatheredData:
     metadata: pd.DataFrame

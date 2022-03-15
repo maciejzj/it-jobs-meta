@@ -18,7 +18,11 @@ from waitress import serve as wsgi_serve
 from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
 from it_jobs_meta.dashboard.dashboard_components import GraphRegistry
-from it_jobs_meta.dashboard.data_provision import DashboardProviders, DashboardDataProviderFactory, GatheredData
+from it_jobs_meta.dashboard.data_provision import (
+    DashboardProviders,
+    DashboardDataProviderFactory,
+    GatheredData,
+)
 
 # def gather_data(
 #     data_warehouse_config_path: Path,
@@ -27,8 +31,6 @@ from it_jobs_meta.dashboard.data_provision import DashboardProviders, DashboardD
 #         data_warehouse_config_path
 #     )
 #     return data_provider.gather_data()
-
-
 
 
 class DashboardApp:
@@ -106,10 +108,13 @@ class DashboardApp:
 
     @staticmethod
     def make_dynamic_content(data: GatheredData) -> DynamicContent:
-        obtained_datetime = pd.to_datetime(data.metadata['obtained_datetime'][0])
+        obtained_datetime = pd.to_datetime(
+            data.metadata['obtained_datetime'][0]
+        )
         graphs = GraphRegistry.make(data.postings)
-        return DynamicContent(obtained_datetime=obtained_datetime, graphs=graphs)
-
+        return DynamicContent(
+            obtained_datetime=obtained_datetime, graphs=graphs
+        )
 
 
 def main():
@@ -118,7 +123,9 @@ def main():
     data_warehouse_factory = DashboardDataProviderFactory(
         DashboardProviders.MONGODB, data_warehouse_config_path
     )
-    app = DashboardApp(data_warehouse_factory, cache_timeout=timedelta(seconds=30))
+    app = DashboardApp(
+        data_warehouse_factory, cache_timeout=timedelta(seconds=30)
+    )
     app.run()
 
 

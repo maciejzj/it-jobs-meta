@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from time import clock_settime
 from typing import Generic, TypeVar
+from enum import Enum, auto
 
 import pandas as pd
 import pymongo
@@ -370,3 +371,29 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
             PandasEtlSqlLoadingEngine.SENIORITY_TABLE_COLS
         ].reset_index()
         return Schemas.seniorities.validate(seniority_df)
+
+
+class EtlLoaders(Enum):
+    MONGODB = auto()
+    SQL = auto()
+
+
+class EtlLoaderFactory:
+    def __init__(self, kind: EtlLoaders, config_path: Path):
+        self._kind = kind
+        self._config_path = config_path
+
+    def make(self):
+        match self._kind:
+            case EtlLoaders.MONGODB:
+                return PandasEtlNoSqlLoadingEngine.from_config_file(
+                    self._config_path
+                )
+            case EtlLoaders.SQL:
+                return PandasEtlSqlLoadingEngine.from_config_file(
+                    self._config_path
+                )
+            case _:
+                raise ValueError(
+                    'Selected data lake implementation is not supported or invalid'
+                )
