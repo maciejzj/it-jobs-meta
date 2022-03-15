@@ -1,36 +1,23 @@
 import logging
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from datetime import datetime, timedelta
-from enum import Enum, auto
-from functools import partial
+from datetime import timedelta
 from pathlib import Path
-from typing import Optional, Type
+from typing import Optional
 
 import dash
 import dash_bootstrap_components as dbc
 import pandas as pd
-import pymongo
 from dash.development import base_component as DashComponent
 from flask_caching import Cache as AppCache
 from waitress import serve as wsgi_serve
 
 from it_jobs_meta.common.utils import setup_logging
-from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
 from it_jobs_meta.dashboard.dashboard_components import GraphRegistry
 from it_jobs_meta.dashboard.data_provision import (
-    DashboardProviders,
     DashboardDataProviderFactory,
+    DashboardProviders,
     GatheredData,
 )
-
-# def gather_data(
-#     data_warehouse_config_path: Path,
-# ) -> GatheredData:
-#     data_provider = MongoDbDashboardDataProvider.from_config_file(
-#         data_warehouse_config_path
-#     )
-#     return data_provider.gather_data()
+from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
 
 
 class DashboardApp:

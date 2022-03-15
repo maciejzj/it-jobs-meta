@@ -1,14 +1,11 @@
 """Raw data storage for job offer postings scrapped from the web."""
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
-from typing import Any
 
 import boto3
 import redis
-from redis import Redis
 from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict

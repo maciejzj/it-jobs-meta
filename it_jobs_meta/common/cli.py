@@ -1,27 +1,10 @@
 import argparse
-from ast import parse
-from enum import Enum, auto
 from pathlib import Path
 from typing import Any, Optional
 
-from numpy import var
-
-from it_jobs_meta.common.utils import setup_logging
-from it_jobs_meta.dashboard.dashboard import (
-    DashboardApp,
-    DashboardProviders,
-    DashboardDataProviderFactory,
-)
-from it_jobs_meta.data_pipeline.data_lake import RedisDataLake, S3DataLake, DataLakes
-from it_jobs_meta.data_pipeline.data_pipeline import DataPipeline
-from it_jobs_meta.data_pipeline.data_warehouse import (
-    EtlPipeline,
-    PandasEtlExtractionFromJsonStr,
-    PandasEtlNoSqlLoadingEngine,
-    PandasEtlSqlLoadingEngine,
-    PandasEtlTransformationEngine,
-    EtlLoaders,
-)
+from it_jobs_meta.dashboard.dashboard import DashboardProviders
+from it_jobs_meta.data_pipeline.data_lake import DataLakes
+from it_jobs_meta.data_pipeline.data_warehouse import EtlLoaders
 
 
 class CliArgumentParser:

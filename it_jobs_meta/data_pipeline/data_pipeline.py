@@ -9,10 +9,10 @@ import croniter
 from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 from it_jobs_meta.data_pipeline.data_warehouse import (
+    EtlLoaderFactory,
     EtlPipeline,
     PandasEtlExtractionFromJsonStr,
     PandasEtlTransformationEngine,
-    EtlLoaderFactory,
 )
 
 from .data_ingestion import NoFluffJobsPostingsDataSource
@@ -70,7 +70,7 @@ class DataPipeline:
             data_warehouse_etl = EtlPipeline(
                 PandasEtlExtractionFromJsonStr(),
                 PandasEtlTransformationEngine(),
-                self._etl_loader_factory.make()
+                self._etl_loader_factory.make(),
             )
             data_warehouse_etl.run(data_as_json)
             logging.info('Data warehousing succeeded')

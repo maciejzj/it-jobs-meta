@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from pathlib import Path
 from enum import Enum, auto
-from typing_extensions import Self
+from pathlib import Path
 
-import pymongo
 import pandas as pd
-
+import pymongo
+from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
 

@@ -5,20 +5,21 @@ from geopy.geocoders import Nominatim
 
 
 class Geolocator:
-    geolocator = Nominatim(user_agent='it-jobs-meta')
+    def __init__(self, country_filter: Optional[tuple[str, ...]] = None):
+        self._geolocator = Nominatim(user_agent='it-jobs-meta')
+        self._country_filter = country_filter
 
     @functools.cache
     def __call__(
-        self, city_name: str, only_from_poland=True
+        self, city_name: str
     ) -> tuple[Optional[str], Optional[float], Optional[float]]:
         return self.get_universal_city_name_lat_lon(city_name)
 
-    @classmethod
     def get_universal_city_name_lat_lon(
-        cls, city_name: str, only_from_poland=True
+        self, city_name: str
     ) -> tuple[Optional[str], Optional[float], Optional[float]]:
 
-        location = cls.geolocator.geocode(city_name)
+        location = self._geolocator.geocode(city_name)
 
         if location is None:
             return Geolocator.make_none_location()
@@ -27,7 +28,8 @@ class Geolocator:
             location.address
         )
 
-        if only_from_poland and country_name != 'Polska':
+        filter_ = self._country_filter
+        if filter_ is not None and country_name not in filter_:
             return Geolocator.make_none_location()
 
         return city_name, location.latitude, location.longitude

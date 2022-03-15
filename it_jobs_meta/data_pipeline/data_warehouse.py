@@ -1,16 +1,13 @@
 import dataclasses
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
-from pathlib import Path
-from time import clock_settime
-from typing import Generic, TypeVar
 from enum import Enum, auto
+from pathlib import Path
+from typing import Generic, TypeVar
 
 import pandas as pd
 import pymongo
 import sqlalchemy as db
-import yaml
 from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
@@ -177,7 +174,7 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
 
 class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def __init__(self):
-        self._geolocator = Geolocator()
+        self._geolocator = Geolocator(country_filter=('Polska'))
 
     def drop_unwanted(self, data: pd.DataFrame) -> pd.DataFrame:
         return data.drop(columns=EtlTransformationEngine.COLS_TO_DROP)
