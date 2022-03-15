@@ -4,7 +4,6 @@ import pandas as pd
 import pytest
 
 from ..data_warehouse import (
-    DataWarehouseDbConfig,
     EtlTransformationEngine,
     PandasEtlTransformationEngine,
 )
@@ -81,14 +80,6 @@ POSTINGS_DATA_DICT_MOCK = {
     'metadata': POSTINGS_METADATA_DICT_MOCK,
     'data': POSTINGS_RESPONSE_JSON_DICT_MOCK,
 }
-
-DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
-    protocol_name='mysql+pymysql',
-    user_name='it_jobs_meta_worker',
-    password='roottmppass',
-    host_address='0.0.0.0',
-    db_name='it_jobs_meta_datawarehouse',
-)
 
 
 class TestHappyPathPandasDataWarehouseETL:
