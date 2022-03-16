@@ -1,3 +1,5 @@
+boto3
+croniter
 dash
 dash-bootstrap-components
 flask-caching
@@ -5,12 +7,11 @@ geopy
 numpy
 pandas
 pandera
+pymongo
 pymysql
 pyyaml
 redis
 requests
-pymongo
 sklearn
 sqlalchemy
-boto3
-croniter
+waitress
