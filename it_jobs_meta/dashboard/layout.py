@@ -6,13 +6,13 @@ from dash import dcc, html
 from dash.development import base_component as DashComponent
 from plotly import graph_objects as go
 
-from it_jobs_meta.dashboard.dashboard_components import Graphs
+from it_jobs_meta.dashboard.dashboard_components import Graph
 
 
 @dataclass
 class DynamicContent:
     obtained_datetime: datetime
-    graphs: dict[Graphs, go.Figure]
+    graphs: dict[Graph, go.Figure]
 
 
 @dataclass
@@ -96,7 +96,7 @@ def make_about() -> DashComponent:
     return about
 
 
-def make_grahps_layout_header(obtained_datetime: datetime) -> DashComponent:
+def make_graphs_layout_header(obtained_datetime: datetime) -> DashComponent:
     datetime_str = obtained_datetime.strftime('%-d %B %Y')
     div = html.Div(
         [
@@ -114,7 +114,7 @@ def make_grahps_layout_header(obtained_datetime: datetime) -> DashComponent:
 
 
 def make_categories_and_seniorities_graphs_layout(
-    graphs: dict[Graphs, dcc.Graph]
+    graphs: dict[Graph, dcc.Graph]
 ) -> DashComponent:
     div = html.Div(
         [
@@ -123,14 +123,14 @@ def make_categories_and_seniorities_graphs_layout(
                 [
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.CATEGORIES_PIE_CHART],
+                            graphs[Graph.CATEGORIES_PIE_CHART],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         md=6,
                     ),
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.TECHNOLOGIES_PIE_CHART],
+                            graphs[Graph.TECHNOLOGIES_PIE_CHART],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         md=6,
@@ -142,14 +142,14 @@ def make_categories_and_seniorities_graphs_layout(
                 [
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.CAT_TECH_SANKEY_CHART],
+                            graphs[Graph.CAT_TECH_SANKEY_CHART],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         md=7,
                     ),
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.SENIORITY_PIE_CHART],
+                            graphs[Graph.SENIORITY_PIE_CHART],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         md=5,
@@ -158,7 +158,7 @@ def make_categories_and_seniorities_graphs_layout(
                 align='center',
             ),
             dbc.Card(
-                graphs[Graphs.SENIORITIES_HISTOGRAM],
+                graphs[Graph.SENIORITIES_HISTOGRAM],
                 className='mt-4 p-1 border-0 rounded shadow',
             ),
         ]
@@ -167,7 +167,7 @@ def make_categories_and_seniorities_graphs_layout(
 
 
 def make_locations_and_remote_graphs_layout(
-    graphs: dict[Graphs, dcc.Graph]
+    graphs: dict[Graph, dcc.Graph]
 ) -> DashComponent:
     div = html.Div(
         [
@@ -176,14 +176,14 @@ def make_locations_and_remote_graphs_layout(
                 [
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.REMOTE_PIE_CHART],
+                            graphs[Graph.REMOTE_PIE_CHART],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         lg=6,
                     ),
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.SALARIES_MAP],
+                            graphs[Graph.SALARIES_MAP],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         lg=6,
@@ -195,21 +195,21 @@ def make_locations_and_remote_graphs_layout(
                 [
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.SALARIES_MAP_JUNIOR],
+                            graphs[Graph.SALARIES_MAP_JUNIOR],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         lg=4,
                     ),
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.SALARIES_MAP_MID],
+                            graphs[Graph.SALARIES_MAP_MID],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         lg=4,
                     ),
                     dbc.Col(
                         dbc.Card(
-                            graphs[Graphs.SALARIES_MAP_SENIOR],
+                            graphs[Graph.SALARIES_MAP_SENIOR],
                             className='mt-4 p-1 border-0 rounded shadow',
                         ),
                         lg=4,
@@ -223,17 +223,17 @@ def make_locations_and_remote_graphs_layout(
 
 
 def make_salaries_breakdown_graphs_layout(
-    graphs: dict[Graphs, dcc.Graph]
+    graphs: dict[Graph, dcc.Graph]
 ) -> DashComponent:
     div = html.Div(
         [
             html.H3('Salaries breakdown', className='mt-4'),
             dbc.Card(
-                graphs[Graphs.TECHNOLOGIES_VIOLIN_PLOT],
+                graphs[Graph.TECHNOLOGIES_VIOLIN_PLOT],
                 className='mt-4 p-1 border-0 rounded shadow',
             ),
             dbc.Card(
-                graphs[Graphs.CONTRACT_TYPE_VIOLIN_PLOT],
+                graphs[Graph.CONTRACT_TYPE_VIOLIN_PLOT],
                 className='mt-4 p-1 border-0 rounded shadow',
             ),
         ]
@@ -242,11 +242,11 @@ def make_salaries_breakdown_graphs_layout(
 
 
 def make_graphs_layout(
-    obtained_datetime: datetime, graphs: dict[Graphs, go.Figure]
+    obtained_datetime: datetime, graphs: dict[Graph, go.Figure]
 ) -> DashComponent:
     data_section = html.Section(
         [
-            make_grahps_layout_header(obtained_datetime),
+            make_graphs_layout_header(obtained_datetime),
             make_categories_and_seniorities_graphs_layout(graphs),
             make_locations_and_remote_graphs_layout(graphs),
             make_salaries_breakdown_graphs_layout(graphs),

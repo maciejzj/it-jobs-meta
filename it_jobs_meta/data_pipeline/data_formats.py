@@ -1,4 +1,4 @@
-"""Data containers and wrappers for data about job postings on the web."""
+"""Data containers and wrappers for job postings data scrapped from the web."""
 
 import dataclasses
 import datetime as dt
@@ -7,28 +7,26 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
+from typing_extensions import Self
+
 
 @dataclass
 class PostingsMetadata:
-    """Metadata to describe a batch of job postings data ingested from web."""
-
     source_name: str
     obtained_datetime: dt.datetime
 
 
 class PostingsData(ABC):
-    """Interface for wrapper for a batch of job postings data."""
-
     @classmethod
     @abstractmethod
-    def from_json_str(cls, json_str) -> 'PostingsData':
+    def from_json_str(cls, json_str) -> Self:
         """Make the data structure from json string.
 
         The input json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'data': Unmodified scraped data in format of a json string.
+            'data': Raw data in format of a json string.
         """
 
     @property
@@ -39,11 +37,7 @@ class PostingsData(ABC):
     @property
     @abstractmethod
     def raw_data(self) -> Any:
-        """Get the raw data scraped from the web.
-
-        This should include data obtained 'as it was' so the return schema is
-        undefined.
-        """
+        """Get the raw data scraped from the web, data schema is undefined."""
 
     @abstractmethod
     def make_key_for_data(self) -> str:
@@ -57,32 +51,25 @@ class PostingsData(ABC):
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp in format 'YYYY-MM-DD HH:MM:SS'.
-            'data': Unmodified scraped data in format of a json string.
+            'data': Raw data in format of a json string.
         """
 
 
 class NoFluffJObsPostingsData(PostingsData):
-    """Wrapper for a batch of postings scraped from No Fluff Jobs website."""
-
     def __init__(self, metadata: PostingsMetadata, raw_data: Any):
-        """Create with given metadata and raw scraped data.
-
-        Although this has no effect in the code, general program flow assumes
-        that the 'raw' data is scraped from the postings REST api on No Fluff
-        Jobs.
-        """
+        """Create with given metadata and raw scraped data."""
         self._raw_data = raw_data
         self._metadata = metadata
 
     @classmethod
-    def from_json_str(cls, json_str: str) -> 'NoFluffJObsPostingsData':
+    def from_json_str(cls, json_str: str) -> Self:
         """Make the data structure from json string.
 
         The input json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'raw_data': Unmodified scraped data in format of a json string.
+            'data': Raw data in format of a json string.
         """
         data_dict = json.loads(json_str)
         source_name = data_dict['metadata']['source_name']
@@ -105,7 +92,7 @@ class NoFluffJObsPostingsData(PostingsData):
         """Make unique string identifier for the scraped data batch.
 
         For this implementation it is a string of Unix epoch timestamp (with
-        integer precision) and data source name (nofluffjobs).
+        integer precision) and data source name ("nofluffjobs").
         """
         timestamp = int(self._metadata.obtained_datetime.timestamp())
         source_name = self._metadata.source_name
@@ -118,12 +105,10 @@ class NoFluffJObsPostingsData(PostingsData):
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'raw_data': Unmodified scraped data in format of a json string. For
+            'raw_data': Raw scraped data in format of a json string. For
                 No Fluff Jobs scraped data the structure is assumed to be:
                 'postings': List of postings.
-                'totalCount': The lenght of the list of postings.
-                However, the format of the content of the 'data' is not
-                guaranteed by this class.
+                'totalCount': The length of the list of postings.
         """
         meta_dict = dataclasses.asdict(self._metadata)
         datetime_ = meta_dict['obtained_datetime']

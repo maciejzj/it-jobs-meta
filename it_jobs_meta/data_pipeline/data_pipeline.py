@@ -2,7 +2,6 @@ import datetime as dt
 import logging
 from pathlib import Path
 from time import sleep
-from typing import Optional
 
 import croniter
 
@@ -12,6 +11,7 @@ from it_jobs_meta.data_pipeline.data_warehouse import (
     EtlLoaderFactory,
     EtlPipeline,
     PandasEtlExtractionFromJsonStr,
+    PandasEtlMongodbLoadingEngine,
     PandasEtlTransformationEngine,
 )
 
@@ -27,9 +27,10 @@ class DataPipeline:
         self._data_lake_factory = data_lake_factory
         self._etl_loader_factory = etl_loader_factory
 
-    def schedule(self, cron_expression: Optional[str] = None):
+    def schedule(self, cron_expression: str | None = None):
         logging.info(
-            f'Data pipeline scheduled with cron expression: "{cron_expression}", (if None, will run once) send SIGINT to stop'
+            f'Data pipeline scheduled with cron expression: {cron_expression} '
+            '(if "None", will run once) send SIGINT to stop'
         )
         self.run()
 
@@ -67,12 +68,12 @@ class DataPipeline:
             )
 
             logging.info('Attempting to perform data warehousing step')
-            data_warehouse_etl = EtlPipeline(
+            etl_pipeline = EtlPipeline(
                 PandasEtlExtractionFromJsonStr(),
                 PandasEtlTransformationEngine(),
                 self._etl_loader_factory.make(),
             )
-            data_warehouse_etl.run(data_as_json)
+            etl_pipeline.run(data_as_json)
             logging.info('Data warehousing succeeded')
 
             logging.info('Data pipeline succeeded')
@@ -82,9 +83,16 @@ class DataPipeline:
 
 
 def main():
-    data_lake_config_path = Path('config/data_lake_db_config.yaml')
-    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
-    setup_logging()
+    test_json_file_path = Path('it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json')
+    mongodb_config_path = Path('config/mongodb_config.yaml')
+    with open(test_json_file_path, 'r') as json_data_file:
+        data_as_json = json_data_file.read()
+    etl_pipeline = EtlPipeline(
+        PandasEtlExtractionFromJsonStr(),
+        PandasEtlTransformationEngine(),
+        PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path)
+    )
+    etl_pipeline.run(data_as_json)
 
 
 if __name__ == '__main__':

@@ -13,7 +13,7 @@ from .data_formats import (
 
 
 class PostingsDataSource(ABC):
-    """Provides a source postings data to get from web. Should be stateless."""
+    """Source for fetching postings data from the web."""
 
     @classmethod
     @abstractmethod

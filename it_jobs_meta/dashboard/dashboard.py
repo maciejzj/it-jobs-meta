@@ -1,7 +1,6 @@
 import logging
 from datetime import timedelta
 from pathlib import Path
-from typing import Optional
 
 import dash
 import dash_bootstrap_components as dbc
@@ -14,7 +13,7 @@ from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.dashboard.dashboard_components import GraphRegistry
 from it_jobs_meta.dashboard.data_provision import (
     DashboardDataProviderFactory,
-    DashboardProviders,
+    DashboardProviderImpl,
     GatheredData,
 )
 from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
@@ -26,8 +25,8 @@ class DashboardApp:
         data_provider_factory: DashboardDataProviderFactory,
         cache_timeout=timedelta(hours=6),
     ):
-        self._app: Optional[dash.Dash] = None
-        self._cache: Optional[AppCache] = None
+        self._app: dash.Dash | None = None
+        self._cache: AppCache | None = None
         self._data_provider_factory = data_provider_factory
         self._cache_timeout = cache_timeout
 
@@ -108,7 +107,7 @@ def main():
     setup_logging()
     data_warehouse_config_path = Path('config/db_config_mongo.yaml')
     data_warehouse_factory = DashboardDataProviderFactory(
-        DashboardProviders.MONGODB, data_warehouse_config_path
+        DashboardProviderImpl.MONGODB, data_warehouse_config_path
     )
     app = DashboardApp(
         data_warehouse_factory, cache_timeout=timedelta(seconds=30)

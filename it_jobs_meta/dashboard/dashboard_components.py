@@ -39,7 +39,7 @@ def center_title(fig: go.Figure) -> go.Figure:
     return fig
 
 
-class Graphs(Enum):
+class Graph(Enum):
     REMOTE_PIE_CHART = auto()
     TECHNOLOGIES_PIE_CHART = auto()
     CATEGORIES_PIE_CHART = auto()
@@ -54,7 +54,7 @@ class Graphs(Enum):
     SALARIES_MAP_SENIOR = auto()
 
 
-class Graph(ABC):
+class GraphFigure(ABC):
     @classmethod
     @abstractmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
@@ -62,15 +62,15 @@ class Graph(ABC):
 
 
 class GraphRegistry:
-    _graph_makers: dict[Graphs, Graph] = {}
+    _graph_makers: dict[Graph, GraphFigure] = {}
 
     @classmethod
-    def register(cls, key):
-        return lambda graph: cls._register_inner(key, graph)
+    def register(cls, key: GraphFigure):
+        return lambda graph_figure: cls._register_inner(key, graph_figure)
 
     @classmethod
-    def make(cls, postings_df: pd.DataFrame) -> dict[Graphs, dcc.Graph]:
-        graphs: dict[Graphs, go.Figure] = {}
+    def make(cls, postings_df: pd.DataFrame) -> dict[Graph, dcc.Graph]:
+        graphs: dict[Graph, go.Figure] = {}
         for graph_key in cls._graph_makers:
             graphs[graph_key] = dcc.Graph(
                 figure=cls._graph_makers[graph_key].make_fig(postings_df)
@@ -78,13 +78,13 @@ class GraphRegistry:
         return graphs
 
     @classmethod
-    def _register_inner(cls, key, graph):
-        cls._graph_makers[key] = graph
-        return graph
+    def _register_inner(cls, key: GraphFigure, graph_figure: GraphFigure):
+        cls._graph_makers[key] = graph_figure
+        return graph_figure
 
 
-@GraphRegistry.register(key=Graphs.TECHNOLOGIES_PIE_CHART)
-class TechnologiesPieChart(Graph):
+@GraphRegistry.register(key=Graph.TECHNOLOGIES_PIE_CHART)
+class TechnologiesPieChart(GraphFigure):
     TITLE = 'Main technology'
     N_MOST_FREQ = 12
 
@@ -100,8 +100,8 @@ class TechnologiesPieChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.CATEGORIES_PIE_CHART)
-class CategoriesPieChart(Graph):
+@GraphRegistry.register(key=Graph.CATEGORIES_PIE_CHART)
+class CategoriesPieChart(GraphFigure):
     TITLE = 'Main category'
     N_MOST_FREQ = 12
 
@@ -117,8 +117,8 @@ class CategoriesPieChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.CAT_TECH_SANKEY_CHART)
-class CategoriesTechnologiesSankeyChart(Graph):
+@GraphRegistry.register(key=Graph.CAT_TECH_SANKEY_CHART)
+class CategoriesTechnologiesSankeyChart(GraphFigure):
     TITLE = 'Categories and technologies share'
     N_MOST_FREQ_CAT = 12
     N_MOST_FREQ_TECH = 12
@@ -166,8 +166,8 @@ class CategoriesTechnologiesSankeyChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SENIORITY_PIE_CHART)
-class SeniorityPieChart(Graph):
+@GraphRegistry.register(key=Graph.SENIORITY_PIE_CHART)
+class SeniorityPieChart(GraphFigure):
     TITLE = 'Seniority'
 
     @classmethod
@@ -178,8 +178,8 @@ class SeniorityPieChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SENIORITIES_HISTOGRAM)
-class SenioritiesHistogram(Graph):
+@GraphRegistry.register(key=Graph.SENIORITIES_HISTOGRAM)
+class SenioritiesHistogram(GraphFigure):
     TITLE = 'Histogram'
     MAX_SALARY = 40000
 
@@ -201,8 +201,8 @@ class SenioritiesHistogram(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.REMOTE_PIE_CHART)
-class RemotePieChart(Graph):
+@GraphRegistry.register(key=Graph.REMOTE_PIE_CHART)
+class RemotePieChart(GraphFigure):
     TITLE = 'Fully remote work possible'
 
     @classmethod
@@ -214,8 +214,8 @@ class RemotePieChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SALARIES_MAP)
-class SalariesMap(Graph):
+@GraphRegistry.register(key=Graph.SALARIES_MAP)
+class SalariesMap(GraphFigure):
     TITLE = 'Mean salary by location (PLN)'
     MIN_CITY_FREQ = 25
 
@@ -253,7 +253,7 @@ class SalariesMap(Graph):
         return fig
 
 
-class SalariesMapFilteredBySeniority(Graph):
+class SalariesMapFilteredBySeniority(GraphFigure):
     @classmethod
     def make_fig(
         cls,
@@ -268,8 +268,8 @@ class SalariesMapFilteredBySeniority(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SALARIES_MAP_JUNIOR)
-class SalariesMapJunior(Graph):
+@GraphRegistry.register(key=Graph.SALARIES_MAP_JUNIOR)
+class SalariesMapJunior(GraphFigure):
     TITLE = 'Mean salary for Juniors'
 
     @classmethod
@@ -285,8 +285,8 @@ class SalariesMapJunior(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SALARIES_MAP_MID)
-class SalariesMapMid(Graph):
+@GraphRegistry.register(key=Graph.SALARIES_MAP_MID)
+class SalariesMapMid(GraphFigure):
     TITLE = 'Mean salary for Mids'
 
     @classmethod
@@ -302,8 +302,8 @@ class SalariesMapMid(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.SALARIES_MAP_SENIOR)
-class SalariesMapSenior(Graph):
+@GraphRegistry.register(key=Graph.SALARIES_MAP_SENIOR)
+class SalariesMapSenior(GraphFigure):
     TITLE = 'Mean salary for Seniors'
 
     @classmethod
@@ -315,8 +315,8 @@ class SalariesMapSenior(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.TECHNOLOGIES_VIOLIN_PLOT)
-class TechnologiesViolinChart(Graph):
+@GraphRegistry.register(key=Graph.TECHNOLOGIES_VIOLIN_PLOT)
+class TechnologiesViolinChart(GraphFigure):
     TITLE = 'Salary violin plot in regard to seniority'
     MAX_SALARY = 40000
     N_MOST_FREQ_TECH = 8
@@ -356,8 +356,8 @@ class TechnologiesViolinChart(Graph):
         return fig
 
 
-@GraphRegistry.register(key=Graphs.CONTRACT_TYPE_VIOLIN_PLOT)
-class ContractTypeViolinChart(Graph):
+@GraphRegistry.register(key=Graph.CONTRACT_TYPE_VIOLIN_PLOT)
+class ContractTypeViolinChart(GraphFigure):
     TITLE = 'Salary violin plot in regard to contract'
     MAX_SALARY = 40000
     N_MOST_FREQ_TECH = 8

@@ -16,26 +16,22 @@ class DataLake(ABC):
 
     @abstractmethod
     def set_data(self, key: str, data: str):
-        """Store data under key. Data is assumed to be json string."""
+        """Store data under key. Data is assumed to be a json string."""
 
     @abstractmethod
     def get_data(self, key: str) -> str:
-        """Get data stored under key. Data is assumed ot be json string."""
+        """Get data stored under key. Data is assumed ot be a json string."""
 
 
 class RedisDataLake(DataLake):
-    """Key-value object storage using Redis.
-
-    This implementation is rather intended for development and prototyping,
-    since Redis is not the main joice for data lakes.
-    """
+    """Key-value object storage using Redis; preferred for development and prototyping."""
 
     def __init__(self, password: str, host_address: str, db_num: str):
         self._db = redis.Redis(host=host_address, password=password, db=db_num)
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> Self:
-        return cls(**load_yaml_as_dict(config_file_path))
+    def from_config_file(cls, config_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_path))
 
     def set_data(self, key: str, data: str):
         """Store data under key. Data is assumed to be json string."""
@@ -55,8 +51,8 @@ class S3DataLake(DataLake):
         self._bucket = s3.Bucket(bucket_name)
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> Self:
-        return cls(**load_yaml_as_dict(config_file_path))
+    def from_config_file(cls, config_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_path))
 
     def set_data(self, key: str, data: str):
         self._bucket.put_object(Key=key, Body=data.encode('utf-8'))
@@ -65,21 +61,21 @@ class S3DataLake(DataLake):
         raise NotImplemented()
 
 
-class DataLakes(Enum):
-    redis = auto()
-    s3bucket = auto()
+class DataLakeImpl(Enum):
+    REDIS = auto()
+    S3BUCKET = auto()
 
 
 class DataLakeFactory:
-    def __init__(self, kind: DataLakes, config_path: Path):
-        self._kind = kind
+    def __init__(self, impl_type: DataLakeImpl, config_path: Path):
+        self._impl_type = impl_type
         self._config_path = config_path
 
     def make(self):
-        match self._kind:
-            case DataLakes.redis:
+        match self._impl_type:
+            case DataLakeImpl.REDIS:
                 return RedisDataLake.from_config_file(self._config_path)
-            case DataLakes.s3bucket:
+            case DataLakeImpl.S3BUCKET:
                 return S3DataLake.from_config_file(self._config_path)
             case _:
                 raise ValueError(

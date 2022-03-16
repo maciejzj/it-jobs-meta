@@ -1,23 +1,22 @@
 import functools
-from typing import Optional
 
 from geopy.geocoders import Nominatim
 
 
 class Geolocator:
-    def __init__(self, country_filter: Optional[tuple[str, ...]] = None):
+    def __init__(self, country_filter: tuple[str, ...] | None = None):
         self._geolocator = Nominatim(user_agent='it-jobs-meta')
         self._country_filter = country_filter
 
     @functools.cache
     def __call__(
         self, city_name: str
-    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+    ) -> tuple[str, float, float] | tuple[None, None, None]:
         return self.get_universal_city_name_lat_lon(city_name)
 
     def get_universal_city_name_lat_lon(
         self, city_name: str
-    ) -> tuple[Optional[str], Optional[float], Optional[float]]:
+    ) -> tuple[str, float, float] | tuple[None, None, None]:
 
         location = self._geolocator.geocode(city_name)
 

@@ -1,3 +1,4 @@
+from bdb import set_trace
 import dataclasses
 import re
 from abc import ABC, abstractmethod
@@ -244,7 +245,7 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         return data
 
 
-class PandasEtlNoSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
+class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     POSTINGS_TABLE_COLS = [
         'name',
         'posted',
@@ -270,8 +271,8 @@ class PandasEtlNoSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         self._db = self._db_client[db_name]
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> Self:
-        return cls(**load_yaml_as_dict(config_file_path))
+    def from_config_file(cls, config_path: Path) -> Self:
+        return cls(**load_yaml_as_dict(config_path))
 
     def load_tables_to_warehouse(
         self, metadata: pd.DataFrame, data: pd.DataFrame
@@ -281,7 +282,7 @@ class PandasEtlNoSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
 
         self._db['metadata'].insert_one(metadata.to_dict('records')[0])
         self._db['postings'].insert_many(
-            data[PandasEtlNoSqlLoadingEngine.POSTINGS_TABLE_COLS].to_dict(
+            data[PandasEtlMongodbLoadingEngine.POSTINGS_TABLE_COLS].to_dict(
                 'records'
             )
         )
@@ -370,27 +371,27 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         return Schemas.seniorities.validate(seniority_df)
 
 
-class EtlLoaders(Enum):
+class EtlLoaderImpl(Enum):
     MONGODB = auto()
     SQL = auto()
 
 
 class EtlLoaderFactory:
-    def __init__(self, kind: EtlLoaders, config_path: Path):
-        self._kind = kind
+    def __init__(self, impl_type: EtlLoaderImpl, config_path: Path):
+        self._impl_type = impl_type
         self._config_path = config_path
 
-    def make(self):
-        match self._kind:
-            case EtlLoaders.MONGODB:
-                return PandasEtlNoSqlLoadingEngine.from_config_file(
+    def make(self) -> EtlLoadingEngine:
+        match self._impl_type:
+            case EtlLoaderImpl.MONGODB:
+                return PandasEtlMongodbLoadingEngine.from_config_file(
                     self._config_path
                 )
-            case EtlLoaders.SQL:
+            case EtlLoaderImpl.SQL:
                 return PandasEtlSqlLoadingEngine.from_config_file(
                     self._config_path
                 )
             case _:
                 raise ValueError(
-                    'Selected data lake implementation is not supported or invalid'
+                    'Selected ETL loader implementation is not supported or invalid'
                 )

@@ -22,7 +22,7 @@ class DashboardDataProvider(ABC):
         pass
 
 
-class MongoDbDashboardDataProvider(DashboardDataProvider):
+class MongodbDashboardDataProvider(DashboardDataProvider):
     def __init__(
         self, user_name: str, password: str, host: str, db_name: str, port=27017
     ):
@@ -38,22 +38,24 @@ class MongoDbDashboardDataProvider(DashboardDataProvider):
     def gather_data(self) -> GatheredData:
         metadata_df = pd.json_normalize(self._db['metadata'].find())
         postings_df = pd.json_normalize(self._db['postings'].find())
+        if metadata_df.empty or postings_df.empty:
+            raise RuntimeError('Data gather for the dashboard resulted in empty datasets')
         return GatheredData(metadata=metadata_df, postings=postings_df)
 
 
-class DashboardProviders(Enum):
+class DashboardProviderImpl(Enum):
     MONGODB = auto()
 
 
 class DashboardDataProviderFactory:
-    def __init__(self, kind: DashboardProviders, config_path: Path):
-        self._kind = kind
+    def __init__(self, impl_type: DashboardProviderImpl, config_path: Path):
+        self._impl_type = impl_type
         self._config_path = config_path
 
     def make(self) -> DashboardDataProvider:
-        match self._kind:
-            case DashboardProviders.MONGODB:
-                return MongoDbDashboardDataProvider.from_config_file(
+        match self._impl_type:
+            case DashboardProviderImpl.MONGODB:
+                return MongodbDashboardDataProvider.from_config_file(
                     self._config_path
                 )
             case _:

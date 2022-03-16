@@ -1,56 +1,63 @@
 import argparse
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
-from it_jobs_meta.dashboard.dashboard import DashboardProviders
-from it_jobs_meta.data_pipeline.data_lake import DataLakes
-from it_jobs_meta.data_pipeline.data_warehouse import EtlLoaders
+from it_jobs_meta.dashboard.dashboard import DashboardProviderImpl
+from it_jobs_meta.data_pipeline.data_lake import DataLakeImpl
+from it_jobs_meta.data_pipeline.data_warehouse import EtlLoaderImpl
 
 
 class CliArgumentParser:
+    PROG = 'it-jobs-meta'
+    DESCRIPTION = (
+        'Data pipeline and meta-analysis dashboard for IT job postings'
+    )
+
     def __init__(self):
-        self._parser = argparse.ArgumentParser()
+        self._args: dict[str, Any] | None = None
+        self._parser = argparse.ArgumentParser(
+            prog=self.PROG, description=self.DESCRIPTION
+        )
         self._subparsers = self._parser.add_subparsers(dest='command')
         self._build_main_command()
         self._build_pipeline_command()
         self._build_dashboard_command()
-        self._args: Optional[dict[str, Any]] = None
 
     @property
-    def args(self) -> argparse.Namespace:
+    def args(self) -> dict[str, Any]:
         if self._args is None:
             self._args = vars(self._parser.parse_args())
         return self._args
 
-    def extract_data_lake(self) -> tuple[DataLakes, Path]:
+    def extract_data_lake(self) -> tuple[DataLakeImpl, Path]:
         match self.args:
             case {'redis': Path(), 's3_bucket': None}:
-                return DataLakes.redis, self.args['redis']
+                return DataLakeImpl.REDIS, self.args['redis']
             case {'s3_bucket': Path(), 'redis': None}:
-                return DataLakes.s3bucket, self.args['s3_bucket']
+                return DataLakeImpl.S3BUCKET, self.args['s3_bucket']
             case _:
                 raise ValueError(
                     'Parsed arguments resulted in unsupported or invalid data lake configuration'
                 )
 
-    def extract_data_warehouse(self) -> tuple[EtlLoaders, Path]:
+    def extract_data_warehouse(self) -> tuple[EtlLoaderImpl, Path]:
         match self.args:
             case {'mongodb': Path(), 'sql': None}:
-                return EtlLoaders.MONGODB, self.args['mongodb']
+                return EtlLoaderImpl.MONGODB, self.args['mongodb']
             case {'sql': Path(), 'mongodb': None}:
-                return EtlLoaders.SQL, self.args['sql']
+                return EtlLoaderImpl.SQL, self.args['sql']
             case _:
                 raise ValueError(
-                    'Parsed arguments resulted in unsupported or invalid data warehouse configuration'
+                    'Parsed arguments resulted in unsupported or invalid ETL loader configuration'
                 )
 
-    def extract_data_provider(self) -> tuple[DashboardProviders, Path]:
+    def extract_data_provider(self) -> tuple[DashboardProviderImpl, Path]:
         match self.args:
             case {'mongodb': Path()}:
-                return DashboardProviders.MONGODB, self.args['mongodb']
+                return DashboardProviderImpl.MONGODB, self.args['mongodb']
             case _:
                 raise ValueError(
-                    'Parsed arguments resulted in unsupported or invalid data warehouse configuration'
+                    'Parsed arguments resulted in unsupported or invalid dashboard data provider configuration'
                 )
 
     def _build_main_command(self):
@@ -78,13 +85,13 @@ class CliArgumentParser:
             type=Path,
         )
 
-        data_warehouse_arg_grp = parser_pipeline.add_mutually_exclusive_group(
+        etl_loader_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
         )
-        data_warehouse_arg_grp.add_argument(
+        etl_loader_arg_grp.add_argument(
             '-m', '--mongodb', metavar='CONFIG_PATH', action='store', type=Path
         )
-        data_warehouse_arg_grp.add_argument(
+        etl_loader_arg_grp.add_argument(
             '-s', '--sql', metavar='CONFIG_PATH', action='store', type=Path
         )
 
@@ -95,9 +102,9 @@ class CliArgumentParser:
             '-w', '--with-wsgi', action='store_true', default=False
         )
 
-        data_warehouse_arg_grp = parser_dashboard.add_mutually_exclusive_group(
+        data_provider_arg_grp = parser_dashboard.add_mutually_exclusive_group(
             required=True
         )
-        data_warehouse_arg_grp.add_argument(
+        data_provider_arg_grp.add_argument(
             '-m', '--mongodb', metavar='CONFIG_PATH', action='store', type=Path
         )
