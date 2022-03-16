@@ -22,8 +22,8 @@ function install_deps {
 
 function install_app {
     python3.10 -m pip install build virtualenv
-    python3.10 -m build it-jobs-meta
-    python3.10 -m pip install it-jobs-meta/dist/it_jobs_meta*.whl
+    python3.10 -m build
+    python3.10 -m pip install dist/it_jobs_meta*.whl
 }
 
 sudo install_deps
