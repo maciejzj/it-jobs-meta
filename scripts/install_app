@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+function install_app {
+    python3.10 -m pip install build virtualenv
+    python3.10 -m build
+    python3.10 -m pip install dist/it_jobs_meta*.whl
+}
+
+install_app

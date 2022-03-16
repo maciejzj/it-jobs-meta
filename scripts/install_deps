@@ -20,13 +20,6 @@ function install_deps {
         docker-compose
 }
 
-function install_app {
-    python3.10 -m pip install build virtualenv
-    python3.10 -m build
-    python3.10 -m pip install dist/it_jobs_meta*.whl
-}
-
-sudo install_deps
-sudo install_python3.10
+install_deps
+install_python3.10
 install_pip3.10
-python3.10 -m pip install dist/*.whl
