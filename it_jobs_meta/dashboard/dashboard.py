@@ -84,9 +84,9 @@ class DashboardApp:
             self.app.layout = render_layout_memoized
 
             if with_wsgi:
-                wsgi_serve(self.app.server, host='0.0.0.0', port='80')
+                wsgi_serve(self.app.server, host='0.0.0.0', port='8080')
             else:
-                self.app.run_server(debug=True, host='0.0.0.0', port='80')
+                self.app.run_server(debug=True, host='0.0.0.0', port='8080')
 
         except Exception as e:
             logging.exception(e)
