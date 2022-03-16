@@ -6,13 +6,17 @@ from typing import Any
 import yaml
 
 
-def setup_logging(log_path: Path = Path()):
-    log_path.parent.mkdir(exist_ok=True, parents=True)
+def setup_logging(*args: Path):
+    log_file_handlers = []
+    for log_path in args:
+        log_path.parent.mkdir(exist_ok=True, parents=True)
+        log_file_handlers.append(logging.FileHandler(log_path))
+
     logging.basicConfig(
         level=logging.INFO,
         format='%(asctime)s [%(levelname)s] %(message)s',
         handlers=[
-            logging.FileHandler(log_path),
+            *log_file_handlers,
             logging.StreamHandler(sys.stdout),
         ],
     )

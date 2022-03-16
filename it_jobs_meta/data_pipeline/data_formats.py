@@ -26,7 +26,7 @@ class PostingsData(ABC):
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'data': Raw data in format of a json string.
+            'raw_data': Raw data in format of a json string.
         """
 
     @property
@@ -69,7 +69,7 @@ class NoFluffJObsPostingsData(PostingsData):
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'data': Raw data in format of a json string.
+            'raw_data': Raw data in format of a json string.
         """
         data_dict = json.loads(json_str)
         source_name = data_dict['metadata']['source_name']

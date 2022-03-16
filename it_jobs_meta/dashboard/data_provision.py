@@ -39,7 +39,9 @@ class MongodbDashboardDataProvider(DashboardDataProvider):
         metadata_df = pd.json_normalize(self._db['metadata'].find())
         postings_df = pd.json_normalize(self._db['postings'].find())
         if metadata_df.empty or postings_df.empty:
-            raise RuntimeError('Data gather for the dashboard resulted in empty datasets')
+            raise RuntimeError(
+                'Data gather for the dashboard resulted in empty datasets'
+            )
         return GatheredData(metadata=metadata_df, postings=postings_df)
 
 
