@@ -7,8 +7,6 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
-from typing_extensions import Self
-
 
 @dataclass
 class PostingsMetadata:
@@ -19,14 +17,14 @@ class PostingsMetadata:
 class PostingsData(ABC):
     @classmethod
     @abstractmethod
-    def from_json_str(cls, json_str) -> Self:
+    def from_json_str(cls, json_str) -> 'PostingsData':
         """Make the data structure from json string.
 
         The input json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
-                'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
-            'raw_data': Raw data in format of a json string.
+                'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
+             'raw_data': Raw data in format of a json string.
         """
 
     @property
@@ -62,13 +60,13 @@ class NoFluffJObsPostingsData(PostingsData):
         self._metadata = metadata
 
     @classmethod
-    def from_json_str(cls, json_str: str) -> Self:
+    def from_json_str(cls, json_str: str) -> NoFluffJObsPostingsData:
         """Make the data structure from json string.
 
         The input json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
-                'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
+                'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
             'raw_data': Raw data in format of a json string.
         """
         data_dict = json.loads(json_str)
@@ -104,7 +102,7 @@ class NoFluffJObsPostingsData(PostingsData):
         The returned json should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
-                'obtained_datetime': Timestamp with format 'YYYY-MM-DD HH:MM:SS'.
+                'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
             'raw_data': Raw scraped data in format of a json string. For
                 No Fluff Jobs scraped data the structure is assumed to be:
                 'postings': List of postings.

@@ -37,7 +37,8 @@ class CliArgumentParser:
                 return DataLakeImpl.S3BUCKET, self.args['s3_bucket']
             case _:
                 raise ValueError(
-                    'Parsed arguments resulted in unsupported or invalid data lake configuration'
+                    'Parsed arguments resulted in unsupported or invalid data'
+                    ' lake configuration'
                 )
 
     def extract_data_warehouse(self) -> tuple[EtlLoaderImpl, Path]:
@@ -48,7 +49,8 @@ class CliArgumentParser:
                 return EtlLoaderImpl.SQL, self.args['sql']
             case _:
                 raise ValueError(
-                    'Parsed arguments resulted in unsupported or invalid ETL loader configuration'
+                    'Parsed arguments resulted in unsupported or invalid ETL '
+                    'loader configuration'
                 )
 
     def extract_data_provider(self) -> tuple[DashboardProviderImpl, Path]:
@@ -57,7 +59,8 @@ class CliArgumentParser:
                 return DashboardProviderImpl.MONGODB, self.args['mongodb']
             case _:
                 raise ValueError(
-                    'Parsed arguments resulted in unsupported or invalid dashboard data provider configuration'
+                    'Parsed arguments resulted in unsupported or invalid '
+                    'dashboard data provider configuration'
                 )
 
     def _build_main_command(self):

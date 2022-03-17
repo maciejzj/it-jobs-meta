@@ -16,7 +16,10 @@ def main():
     match parser.args['command']:
         case 'pipeline':
             data_lake_type, data_lake_cfg_path = parser.extract_data_lake()
-            warehouse_type, warehouse_cfg_path = parser.extract_data_warehouse()
+            (
+                warehouse_type,
+                warehouse_cfg_path,
+            ) = parser.extract_data_warehouse()
             data_lake_factory = DataLakeFactory(
                 data_lake_type, data_lake_cfg_path
             )

@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pandas as pd
 import pymongo
-from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
 
@@ -24,7 +23,12 @@ class DashboardDataProvider(ABC):
 
 class MongodbDashboardDataProvider(DashboardDataProvider):
     def __init__(
-        self, user_name: str, password: str, host: str, db_name: str, port=27017
+        self,
+        user_name: str,
+        password: str,
+        host: str,
+        db_name: str,
+        port=27017,
     ):
         self._db_client = pymongo.MongoClient(
             f'mongodb://{user_name}:{password}@{host}:{port}'
@@ -32,7 +36,7 @@ class MongodbDashboardDataProvider(DashboardDataProvider):
         self._db = self._db_client[db_name]
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> Self:
+    def from_config_file(cls, config_file_path: Path) -> 'MongodbDashboardDataProvider':
         return cls(**load_yaml_as_dict(config_file_path))
 
     def gather_data(self) -> GatheredData:
@@ -62,5 +66,6 @@ class DashboardDataProviderFactory:
                 )
             case _:
                 raise ValueError(
-                    'Selected data provider implementation is not supported or invalid'
+                    'Selected data provider implementation is not supported '
+                    'or invalid'
                 )

@@ -65,7 +65,7 @@ class GraphRegistry:
     _graph_makers: dict[Graph, GraphFigure] = {}
 
     @classmethod
-    def register(cls, key: GraphFigure):
+    def register(cls, key: Graph):
         return lambda graph_figure: cls._register_inner(key, graph_figure)
 
     @classmethod
@@ -78,7 +78,7 @@ class GraphRegistry:
         return graphs
 
     @classmethod
-    def _register_inner(cls, key: GraphFigure, graph_figure: GraphFigure):
+    def _register_inner(cls, key: Graph, graph_figure: GraphFigure):
         cls._graph_makers[key] = graph_figure
         return graph_figure
 
@@ -156,8 +156,12 @@ class CategoriesTechnologiesSankeyChart(GraphFigure):
         fig = go.Figure(
             data=[
                 go.Sankey(
-                    node=dict(label=np.unique(sources + targets)),
-                    link=dict(source=sources_e, target=targets_e, value=values),
+                    node={'label': np.unique(sources + targets)},
+                    link={
+                        'source': sources_e,
+                        'target': targets_e,
+                        'value': values,
+                    },
                 )
             ]
         )
@@ -253,7 +257,7 @@ class SalariesMap(GraphFigure):
         return fig
 
 
-class SalariesMapFilteredBySeniority(GraphFigure):
+class SalariesMapFilteredBySeniority:
     @classmethod
     def make_fig(
         cls,
@@ -332,7 +336,9 @@ class TechnologiesViolinChart(GraphFigure):
         tech_most_freq = get_rows_with_n_most_frequent_vals_in_col(
             postings_df, 'technology', cls.N_MOST_FREQ_TECH
         )
-        limited = tech_most_freq[tech_most_freq['salary_mean'] < cls.MAX_SALARY]
+        limited = tech_most_freq[
+            tech_most_freq['salary_mean'] < cls.MAX_SALARY
+        ]
         limited = limited[
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
@@ -347,7 +353,9 @@ class TechnologiesViolinChart(GraphFigure):
             points=False,
         )
         fig = move_legend_to_top(fig)
-        fig = fig.update_traces(side='positive', width=1.5, spanmode='hard', meanline_visible=True)
+        fig = fig.update_traces(
+            side='positive', width=1.5, spanmode='hard', meanline_visible=True
+        )
         fig = fig.update_layout(
             height=600,
             xaxis_title_text='Mean salary (PLN)',
@@ -369,7 +377,9 @@ class ContractTypeViolinChart(GraphFigure):
         tech_most_freq = get_rows_with_n_most_frequent_vals_in_col(
             postings_df, 'technology', cls.N_MOST_FREQ_TECH
         )
-        limited = tech_most_freq[tech_most_freq['salary_mean'] < cls.MAX_SALARY]
+        limited = tech_most_freq[
+            tech_most_freq['salary_mean'] < cls.MAX_SALARY
+        ]
         b2b_df = limited[limited['contract_type'] == 'B2B']
         perm_df = limited[limited['contract_type'] == 'Permanent']
 

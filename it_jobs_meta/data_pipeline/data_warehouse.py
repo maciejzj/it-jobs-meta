@@ -8,7 +8,6 @@ from typing import Generic, TypeVar
 import pandas as pd
 import pymongo
 import sqlalchemy as db
-from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
 
@@ -150,7 +149,9 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
     def extract(self, input_: str) -> tuple[pd.DataFrame, pd.DataFrame]:
         data = NoFluffJObsPostingsData.from_json_str(input_)
         self.validate_nofluffjobs_data(data)
-        metadata_df = pd.DataFrame(dataclasses.asdict(data.metadata), index=[0])
+        metadata_df = pd.DataFrame(
+            dataclasses.asdict(data.metadata), index=[0]
+        )
         data_df = pd.DataFrame(data.raw_data['postings'])
         data_df = data_df.set_index('id')
         return metadata_df, data_df
@@ -164,7 +165,9 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
                 f'"nofluffjobs", got: {data.metadata.source_name}'
             )
         try:
-            assert data.raw_data['totalCount'] == len(data.raw_data['postings'])
+            assert data.raw_data['totalCount'] == len(
+                data.raw_data['postings']
+            )
         except KeyError as error:
             raise ValueError(
                 'Data extractor got correct data format type and'
@@ -209,7 +212,8 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def extract_locations(self, data: pd.DataFrame) -> pd.DataFrame:
         data['city'] = data['location'].transform(
             lambda location_dict: [
-                self._geolocator(loc['city']) for loc in location_dict['places']
+                self._geolocator(loc['city'])
+                for loc in location_dict['places']
             ]
         )
         return data
@@ -262,7 +266,12 @@ class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
     ]
 
     def __init__(
-        self, user_name: str, password: str, host: str, db_name: str, port=27017
+        self,
+        user_name: str,
+        password: str,
+        host: str,
+        db_name: str,
+        port=27017,
     ):
         self._db_client = pymongo.MongoClient(
             f'mongodb://{user_name}:{password}@{host}:{port}'
@@ -270,7 +279,7 @@ class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         self._db = self._db_client[db_name]
 
     @classmethod
-    def from_config_file(cls, config_path: Path) -> Self:
+    def from_config_file(cls, config_path: Path) -> 'PandasEtlMongodbLoadingEngine':
         return cls(**load_yaml_as_dict(config_path))
 
     def load_tables_to_warehouse(
@@ -281,9 +290,9 @@ class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
 
         self._db['metadata'].insert_one(metadata.to_dict('records')[0])
         self._db['postings'].insert_many(
-            data[PandasEtlMongodbLoadingEngine.POSTINGS_TABLE_COLS].to_dict(
-                'records'
-            )
+            data[PandasEtlMongodbLoadingEngine.POSTINGS_TABLE_COLS]
+            .reset_index()
+            .to_dict('records')
         )
 
 
@@ -317,7 +326,7 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         )
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> Self:
+    def from_config_file(cls, config_file_path: Path) -> 'PandasEtlSqlLoadingEngine':
         return cls(**load_yaml_as_dict(config_file_path))
 
     def load_tables_to_warehouse(
@@ -392,5 +401,6 @@ class EtlLoaderFactory:
                 )
             case _:
                 raise ValueError(
-                    'Selected ETL loader implementation is not supported or invalid'
+                    'Selected ETL loader implementation is not supported or '
+                    'invalid'
                 )

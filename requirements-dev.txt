@@ -4,3 +4,8 @@ isort
 mypy
 pytest
 pytest-mock
+types-croniter
+types-pyyaml
+types-redis
+types-requests
+types-waitress

@@ -10,7 +10,7 @@ def main():
     json_data_string = data.make_json_str_from_data()
     output_path = Path(f'data_processing/test/{data_key}.json')
 
-    with open(output_path, 'w') as text_file:
+    with open(output_path, 'w', encoding='utf-8') as text_file:
         text_file.write(json_data_string)
 
 

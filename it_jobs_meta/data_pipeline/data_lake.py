@@ -6,7 +6,6 @@ from pathlib import Path
 
 import boto3
 import redis
-from typing_extensions import Self
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
 
@@ -24,13 +23,13 @@ class DataLake(ABC):
 
 
 class RedisDataLake(DataLake):
-    """Key-value object storage using Redis; preferred for development and prototyping."""
+    """Redis-based key-value storage made for development and prototyping."""
 
     def __init__(self, password: str, host_address: str, db_num: str):
         self._db = redis.Redis(host=host_address, password=password, db=db_num)
 
     @classmethod
-    def from_config_file(cls, config_path: Path) -> Self:
+    def from_config_file(cls, config_path: Path) -> 'RedisDataLake':
         return cls(**load_yaml_as_dict(config_path))
 
     def set_data(self, key: str, data: str):
@@ -51,14 +50,14 @@ class S3DataLake(DataLake):
         self._bucket = s3.Bucket(bucket_name)
 
     @classmethod
-    def from_config_file(cls, config_path: Path) -> Self:
+    def from_config_file(cls, config_path: Path) -> 'S3DataLake':
         return cls(**load_yaml_as_dict(config_path))
 
     def set_data(self, key: str, data: str):
         self._bucket.put_object(Key=key, Body=data.encode('utf-8'))
 
     def get_data(self, key: str) -> str:
-        raise NotImplemented()
+        raise NotImplementedError()
 
 
 class DataLakeImpl(Enum):
@@ -79,5 +78,6 @@ class DataLakeFactory:
                 return S3DataLake.from_config_file(self._config_path)
             case _:
                 raise ValueError(
-                    'Selected data lake implementation is not supported or invalid'
+                    'Selected data lake implementation is not supported or '
+                    'invalid'
                 )

@@ -26,8 +26,8 @@ class DashboardTextualComponents:
     ABOUT_TEXT_MD = '''
     This website serves as a data analysis service based on postings from
     [No Fluff Jobs](https://nofluffjobs.com), which is one of the most popular
-    job walls for IT specialists in Poland. The data is gathered once a week and
-    presented to you in form of beautiful plots, graphs, and maps.  The
+    job walls for IT specialists in Poland. The data is gathered once a week
+    and presented to you in form of beautiful plots, graphs, and maps. The
     meta-analysis of IT markets provides insights into leading technologies,
     salaries, job experience, and work locations distributions. The knowledge
     distilled from the analysis can help you with finding a job, evaluating

@@ -5,8 +5,9 @@ from time import sleep
 
 import croniter
 
-from it_jobs_meta.common.utils import setup_logging
-from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory, DataLakeImpl, S3DataLake
+from it_jobs_meta.data_pipeline.data_lake import (
+    DataLakeFactory,
+)
 from it_jobs_meta.data_pipeline.data_warehouse import (
     EtlLoaderFactory,
     EtlPipeline,
@@ -47,7 +48,7 @@ class DataPipeline:
                     )
                     sleep(timedelta_till_next_trigger.total_seconds())
             except KeyboardInterrupt:
-                logging.info(f'Data pipeline loop interrupted by user`')
+                logging.info('Data pipeline loop interrupted by user')
 
     def run(self):
         try:
@@ -83,14 +84,16 @@ class DataPipeline:
 
 
 def main():
-    test_json_file_path = Path('it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json')
+    test_json_file_path = Path(
+        'it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json'
+    )
     mongodb_config_path = Path('config/mongodb_config.yaml')
-    with open(test_json_file_path, 'r') as json_data_file:
+    with open(test_json_file_path, 'r', encoding='utf-8') as json_data_file:
         data_as_json = json_data_file.read()
     etl_pipeline = EtlPipeline(
         PandasEtlExtractionFromJsonStr(),
         PandasEtlTransformationEngine(),
-        PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path)
+        PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path),
     )
     etl_pipeline.run(data_as_json)
 
