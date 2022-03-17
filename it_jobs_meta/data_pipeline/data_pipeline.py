@@ -87,20 +87,12 @@ def main():
     mongodb_config_path = Path('config/mongodb_config.yaml')
     with open(test_json_file_path, 'r') as json_data_file:
         data_as_json = json_data_file.read()
-    # etl_pipeline = EtlPipeline(
-    #     PandasEtlExtractionFromJsonStr(),
-    #     PandasEtlTransformationEngine(),
-    #     PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path)
-    # )
-    # etl_pipeline.run(data_as_json)
-    from it_jobs_meta.data_pipeline.data_lake import DataLakeImpl, S3DataLake, DataLakeFactory
-    from it_jobs_meta.data_pipeline.data_formats import PostingsData
-    data_lake = DataLakeFactory(config_path=Path('config/s3_bucket_config.yaml'), type=DataLakeImpl.S3BUCKET).make()
-    data = PostingsData.from_json_str(data_as_json)
-    data_lake.set_data(data.make_key_for_data(), data.make_json_str_from_data())
-    print(data_lake.get_data(data.make_json_str_from_data)[:50])
-
-
+    etl_pipeline = EtlPipeline(
+        PandasEtlExtractionFromJsonStr(),
+        PandasEtlTransformationEngine(),
+        PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path)
+    )
+    etl_pipeline.run(data_as_json)
 
 
 if __name__ == '__main__':
