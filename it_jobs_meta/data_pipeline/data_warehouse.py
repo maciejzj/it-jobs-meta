@@ -279,7 +279,9 @@ class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         self._db = self._db_client[db_name]
 
     @classmethod
-    def from_config_file(cls, config_path: Path) -> 'PandasEtlMongodbLoadingEngine':
+    def from_config_file(
+        cls, config_path: Path
+    ) -> 'PandasEtlMongodbLoadingEngine':
         return cls(**load_yaml_as_dict(config_path))
 
     def load_tables_to_warehouse(
@@ -326,7 +328,9 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         )
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> 'PandasEtlSqlLoadingEngine':
+    def from_config_file(
+        cls, config_file_path: Path
+    ) -> 'PandasEtlSqlLoadingEngine':
         return cls(**load_yaml_as_dict(config_file_path))
 
     def load_tables_to_warehouse(

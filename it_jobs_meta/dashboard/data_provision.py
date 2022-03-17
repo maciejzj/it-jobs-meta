@@ -36,7 +36,9 @@ class MongodbDashboardDataProvider(DashboardDataProvider):
         self._db = self._db_client[db_name]
 
     @classmethod
-    def from_config_file(cls, config_file_path: Path) -> 'MongodbDashboardDataProvider':
+    def from_config_file(
+        cls, config_file_path: Path
+    ) -> 'MongodbDashboardDataProvider':
         return cls(**load_yaml_as_dict(config_file_path))
 
     def gather_data(self) -> GatheredData:

@@ -28,27 +28,22 @@ class DataPipeline:
         self._data_lake_factory = data_lake_factory
         self._etl_loader_factory = etl_loader_factory
 
-    def schedule(self, cron_expression: str | None = None):
+    def schedule(self, cron_expression: str):
         logging.info(
             f'Data pipeline scheduled with cron expression: {cron_expression} '
-            '(if "None", will run once) send SIGINT to stop'
+            'send SIGINT to stop'
         )
-        self.run()
 
-        if cron_expression is not None:
-            now = dt.datetime.now()
-            cron = croniter.croniter(cron_expression, now)
+        cron = croniter.croniter(cron_expression, dt.datetime.now())
 
-            try:
-                while True:
-                    self.run()
-                    now = dt.datetime.now()
-                    timedelta_till_next_trigger = (
-                        cron.get_next(dt.datetime) - now
-                    )
-                    sleep(timedelta_till_next_trigger.total_seconds())
-            except KeyboardInterrupt:
-                logging.info('Data pipeline loop interrupted by user')
+        try:
+            while True:
+                now = dt.datetime.now()
+                timedelta_till_next_trigger = cron.get_next(dt.datetime) - now
+                sleep(timedelta_till_next_trigger.total_seconds())
+                self.run()
+        except KeyboardInterrupt:
+            logging.info('Data pipeline loop interrupted by user')
 
     def run(self):
         try:

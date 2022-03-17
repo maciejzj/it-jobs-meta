@@ -31,7 +31,11 @@ def main():
                 data_lake_factory,
                 data_warehouse_factory,
             )
-            data_pipeline.schedule(parser.args['schedule'])
+
+            if parser.args['schedule'] is not None:
+                data_pipeline.schedule(parser.args['schedule'])
+            else:
+                data_pipeline.run()
 
         case 'dashboard':
             provider_type, provider_cfg_path = parser.extract_data_provider()

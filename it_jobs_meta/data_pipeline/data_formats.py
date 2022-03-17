@@ -60,7 +60,7 @@ class NoFluffJObsPostingsData(PostingsData):
         self._metadata = metadata
 
     @classmethod
-    def from_json_str(cls, json_str: str) -> NoFluffJObsPostingsData:
+    def from_json_str(cls, json_str: str) -> 'NoFluffJObsPostingsData':
         """Make the data structure from json string.
 
         The input json should have keys:
