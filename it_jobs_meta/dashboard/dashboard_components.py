@@ -265,6 +265,7 @@ class SalariesMapFilteredBySeniority(GraphFigure):
         postings_df = postings_df[postings_df['seniority'] == seniority]
 
         fig = SalariesMap.make_fig(postings_df)
+        fig = fig.update_layout(margin={'l': 65, 'r': 65, 'b': 60})
         return fig
 
 
@@ -317,8 +318,8 @@ class SalariesMapSenior(GraphFigure):
 
 @GraphRegistry.register(key=Graph.TECHNOLOGIES_VIOLIN_PLOT)
 class TechnologiesViolinChart(GraphFigure):
-    TITLE = 'Salary violin plot in regard to seniority'
-    MAX_SALARY = 40000
+    TITLE = 'Violin plot split by seniority'
+    MAX_SALARY = 35000
     N_MOST_FREQ_TECH = 8
 
     @classmethod
@@ -338,18 +339,19 @@ class TechnologiesViolinChart(GraphFigure):
 
         fig = px.violin(
             limited,
-            y='salary_mean',
-            x='technology',
+            x='salary_mean',
+            y='technology',
             color='seniority',
             violinmode='overlay',
             title=cls.TITLE,
             points=False,
         )
         fig = move_legend_to_top(fig)
-        fig = fig.update_traces(spanmode='hard', meanline_visible=True)
+        fig = fig.update_traces(side='positive', width=1.5, spanmode='hard', meanline_visible=True)
         fig = fig.update_layout(
-            yaxis_title_text='Mean salary (PLN)',
-            xaxis_title_text='Technology',
+            height=600,
+            xaxis_title_text='Mean salary (PLN)',
+            yaxis_title_text='Technology',
             legend_title_text=None,
         )
         fig = center_title(fig)
@@ -358,7 +360,7 @@ class TechnologiesViolinChart(GraphFigure):
 
 @GraphRegistry.register(key=Graph.CONTRACT_TYPE_VIOLIN_PLOT)
 class ContractTypeViolinChart(GraphFigure):
-    TITLE = 'Salary violin plot in regard to contract'
+    TITLE = 'Violin plot split by contract'
     MAX_SALARY = 40000
     N_MOST_FREQ_TECH = 8
 
