@@ -1,5 +1,8 @@
 services:
-  data_lake_db:
+  redis_data_lake_db:
+    profiles:
+      - dev_mongo
+      - dev_sql
     image: redis
     ports:
       - '6379:6379'
@@ -8,21 +11,24 @@ services:
     environment:
       REDIS_PASSWORD: 'pass'
 
-  warehouse_db:
+  sql_data_warehouse_db:
+    profiles:
+      - dev_sql
     image: mariadb
     ports:
       - '3306:3306'
     environment:
-      MYSQL_ROOT_PASSWORD: 'rootpass'
+      MYSQL_ROOT_PASSWORD: 'pass'
       MYSQL_DATABASE: 'it_jobs_meta_datawarehouse'
       MYSQL_USER: 'it_jobs_meta_worker'
-      MYSQL_PASSWORD: 'userpass'
+      MYSQL_PASSWORD: 'pass'
 
-
-  mongo:
+  mongo_data_warehouse_db:
+    profiles:
+      - dev_mongo
     image: mongo
     ports:
       - '27017:27017'
     environment:
-      MONGO_INITDB_ROOT_USERNAME: 'root'
-      MONGO_INITDB_ROOT_PASSWORD: 'example'
+      MONGO_INITDB_ROOT_USERNAME: 'it_jobs_meta_worker'
+      MONGO_INITDB_ROOT_PASSWORD: 'pass'
