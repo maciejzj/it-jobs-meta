@@ -46,7 +46,7 @@ def make_navbar() -> DashComponent:
             active=True,
             className='mr-0',
         ),
-        brand='IT Jobs Meta',
+        brand='IT Jobs Meta ｜ BETA',
         className='bg-white',
     )
     return navbar

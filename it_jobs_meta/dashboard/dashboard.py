@@ -84,7 +84,12 @@ class DashboardApp:
             self.app.layout = render_layout_memoized
 
             if with_wsgi:
-                wsgi_serve(self.app.server, host='0.0.0.0', port='8080')
+                wsgi_serve(
+                    self.app.server,
+                    host='0.0.0.0',
+                    port='8080',
+                    url_scheme='https',
+                )
             else:
                 self.app.run_server(debug=True, host='0.0.0.0', port='8080')
 
