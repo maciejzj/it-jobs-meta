@@ -42,7 +42,7 @@ function install_app {
 
 set_swap
 install_deps
-setup_docker
 install_python3.10
 install_pip3.10
 install_app
+setup_docker
