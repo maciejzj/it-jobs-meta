@@ -2,7 +2,7 @@
 
 set -euo pipefail
 
-function set_swap {
+function setup_swap {
     sudo dd if=/dev/zero of=/swapfile bs=128M count=8
     sudo chmod 600 /swapfile
     sudo mkswap /swapfile
@@ -17,11 +17,6 @@ function install_deps {
     sudo apt install -y \
         docker \
         docker-compose
-}
-
-function setup_docker {
-    sudo usermod -aG docker $USER
-    newgrp docker
 }
 
 function install_python3.10 {
@@ -40,9 +35,20 @@ function install_app {
     python3.10 -m pip install dist/it_jobs_meta*.whl
 }
 
-set_swap
+fuction setup_path {
+    LOCAL_BIN="${HOME}/.local/bin/"
+    export PATH="${PATH}:${LOCAL_BIN}"
+}
+
+function setup_docker {
+    sudo usermod -aG docker $USER
+    newgrp docker
+}
+
+setup_swap
 install_deps
 install_python3.10
 install_pip3.10
 install_app
+setup_path
 setup_docker
