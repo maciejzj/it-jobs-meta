@@ -7,7 +7,7 @@ function set_swap {
     sudo chmod 600 /swapfile
     sudo mkswap /swapfile
     sudo swapon /swapfile
-    sudo echo '/swapfile swap swap defaults 0 0' >> /etc/fstab
+    sudo tee -a /etc/fstab <<< '/swapfile swap swap defaults 0 0'
     sudo sysctl vm.swappiness=1
 }
 
