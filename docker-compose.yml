@@ -1,8 +1,7 @@
+version: '3'
+
 services:
   redis_data_lake_db:
-    profiles:
-      - dev_mongo
-      - dev_sql
     image: redis
     ports:
       - '6379:6379'
@@ -12,8 +11,6 @@ services:
       REDIS_PASSWORD: 'pass'
 
   sql_data_warehouse_db:
-    profiles:
-      - dev_sql
     image: mariadb
     ports:
       - '3306:3306'
@@ -24,8 +21,6 @@ services:
       MYSQL_PASSWORD: 'pass'
 
   mongo_data_warehouse_db:
-    profiles:
-      - dev_mongo
     image: mongo
     ports:
       - '27017:27017'

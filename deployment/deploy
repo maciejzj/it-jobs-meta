@@ -35,7 +35,7 @@ function install_app {
     python3.10 -m pip install dist/it_jobs_meta*.whl
 }
 
-fuction setup_path {
+function setup_path {
     LOCAL_BIN="${HOME}/.local/bin/"
     export PATH="${PATH}:${LOCAL_BIN}"
 }
