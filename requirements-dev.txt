@@ -1,4 +1,5 @@
 black
+build
 flake8
 isort
 mypy
