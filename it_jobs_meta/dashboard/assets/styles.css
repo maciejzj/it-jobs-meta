@@ -10,3 +10,26 @@ p a {
 p a:hover {
     color: rgb(33, 37, 41);
 }
+
+._dash-loading {
+    width: 0;
+    height: 0;
+    margin: auto;
+    text-align: center;
+    color: transparent;
+  }
+  
+  ._dash-loading::after {
+    content: '';
+    display: inline-block;
+    width: 2rem;
+    height: 2rem;
+    margin-top: 2rem;
+    vertical-align: text-bottom;
+    color: rgb(33, 37, 41);
+    border: 0.25em solid currentColor;
+    border-right-color: transparent;
+    border-radius: 50%;
+    animation: spinner-border 0.75s linear infinite;
+    -webkit-animation: spinner-border 0.75s linear infinite;
+  }
