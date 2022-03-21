@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from ..data_warehouse import (
+from it_jobs_meta.data_pipeline.data_warehouse import (
     EtlTransformationEngine,
     PandasEtlTransformationEngine,
 )
@@ -93,7 +93,7 @@ class TestHappyPathPandasDataWarehouseETL:
         for key in EtlTransformationEngine.COLS_TO_DROP:
             assert key not in result
 
-    def test_extracts_remote_correclty(self):
+    def test_extracts_remote_correctly(self):
         result = self.transformer.extract_remote(self.df)
         assert 'remote' in result
         assert result.loc['ELGZSKOL']['remote']

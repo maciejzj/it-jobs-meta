@@ -5,7 +5,7 @@ from abc import ABC, abstractmethod
 
 import requests
 
-from .data_formats import (
+from it_jobs_meta.data_pipeline.data_formats import (
     NoFluffJObsPostingsData,
     PostingsData,
     PostingsMetadata,

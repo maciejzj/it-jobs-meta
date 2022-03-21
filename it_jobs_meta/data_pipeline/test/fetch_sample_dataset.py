@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from ..data_ingestion import NoFluffJobsPostingsDataSource
+from it_jobs_meta.data_pipeline.data_ingestion import (
+    NoFluffJobsPostingsDataSource,
+)
 
 
 def main():

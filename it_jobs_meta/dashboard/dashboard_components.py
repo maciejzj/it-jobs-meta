@@ -408,7 +408,7 @@ class ContractTypeViolinChart(GraphFigure):
                 points=False,
             )
         )
-        fig.update_traces(meanline_visible=True)
+        fig.update_traces(meanline_visible=True, width=0.9)
         fig.update_layout(
             violingap=0,
             violinmode='overlay',

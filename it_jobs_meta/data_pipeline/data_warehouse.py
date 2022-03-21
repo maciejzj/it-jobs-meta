@@ -10,10 +10,9 @@ import pymongo
 import sqlalchemy as db
 
 from it_jobs_meta.common.utils import load_yaml_as_dict
-
-from .data_formats import NoFluffJObsPostingsData
-from .data_validation import Schemas
-from .geolocator import Geolocator
+from it_jobs_meta.data_pipeline.data_formats import NoFluffJObsPostingsData
+from it_jobs_meta.data_pipeline.data_validation import Schemas
+from it_jobs_meta.data_pipeline.geolocator import Geolocator
 
 DataType = TypeVar('DataType')
 PipelineInputType = TypeVar('PipelineInputType')
