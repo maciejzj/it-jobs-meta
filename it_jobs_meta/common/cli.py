@@ -18,7 +18,9 @@ class CliArgumentParser:
         self._parser = argparse.ArgumentParser(
             prog=self.PROG, description=self.DESCRIPTION
         )
-        self._subparsers = self._parser.add_subparsers(dest='command', required=True)
+        self._subparsers = self._parser.add_subparsers(
+            dest='command', required=True
+        )
         self._build_main_command()
         self._build_pipeline_command()
         self._build_dashboard_command()
