@@ -93,7 +93,7 @@ resource "aws_iam_policy" "allow_s3_bucket_access" {
 }
 
 resource "aws_iam_role" "iam_role_for_ec2" {
-  name = "my_role"
+  name = "iam_role_for_ec2_it_jobs_meta_server"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
