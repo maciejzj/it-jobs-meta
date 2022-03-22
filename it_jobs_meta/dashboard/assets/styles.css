@@ -17,9 +17,9 @@ p a:hover {
     margin: auto;
     text-align: center;
     color: transparent;
-  }
-  
-  ._dash-loading::after {
+}
+
+._dash-loading::after {
     content: '';
     display: inline-block;
     width: 2rem;
@@ -32,4 +32,8 @@ p a:hover {
     border-radius: 50%;
     animation: spinner-border 0.75s linear infinite;
     -webkit-animation: spinner-border 0.75s linear infinite;
-  }
+}
+
+.card {
+    min-height: 350px;
+}
