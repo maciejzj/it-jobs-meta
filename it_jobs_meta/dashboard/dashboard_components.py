@@ -21,6 +21,18 @@ def get_rows_with_n_most_frequent_vals_in_col(
     return df[df[col_name].isin(n_most_freq)]
 
 
+def sort_by_seniority(df: pd.DataFrame) -> pd.DataFrame:
+    SENIORITY_ORDER = {
+        'Trainee': 0,
+        'Junior': 1,
+        'Mid': 2,
+        'Senior': 3
+    }
+
+    sorted = df.sort_values('seniority', key=lambda x: x.map(SENIORITY_ORDER))
+    return sorted
+
+
 def move_legend_to_top(fig: go.Figure) -> go.Figure:
     fig.update_layout(
         legend={
@@ -192,6 +204,7 @@ class SenioritiesHistogram(GraphFigure):
         postings_df = postings_df.explode('seniority')
         postings_df = postings_df[postings_df['salary_mean'] < cls.MAX_SALARY]
         postings_df = postings_df[postings_df['salary_mean'] > 0]
+        postings_df = sort_by_seniority(postings_df)
 
         fig = px.histogram(
             postings_df, x='salary_mean', color='seniority', title=cls.TITLE
@@ -250,8 +263,8 @@ class SalariesMap(GraphFigure):
             color='salary_mean',
             title=cls.TITLE,
             fitbounds='locations',
-            labels={'salary_mean': 'Mean salary'},
-            hover_data={'city': True},
+            labels={'salary_mean': 'Mean salary', 'job_counts': 'Number of jobs'},
+            hover_data={'city': True, 'lat': False, 'lon': False},
         )
         fig = center_title(fig)
         return fig
@@ -342,6 +355,7 @@ class TechnologiesViolinChart(GraphFigure):
         limited = limited[
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
+        limited = sort_by_seniority(limited)
 
         fig = px.violin(
             limited,
