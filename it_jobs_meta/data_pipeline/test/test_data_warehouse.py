@@ -3,11 +3,11 @@ import math
 import pandas as pd
 import pytest
 
-from ..data_warehouse import (
-    DataWarehouseDbConfig,
-    EtlConstants,
+from it_jobs_meta.data_pipeline.data_warehouse import (
+    EtlTransformationEngine,
     PandasEtlTransformationEngine,
 )
+
 
 POSTINGS_LIST_MOCK = [
     {
@@ -20,21 +20,21 @@ POSTINGS_LIST_MOCK = [
                     'city': 'Warsaw',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol',  # noqa: E501
                 },
                 {
                     'country': {'code': 'POL', 'name': 'Poland'},
                     'city': 'Gdynia',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol',  # noqa: E501
                 },
                 {
                     'country': {'code': 'POL', 'name': 'Poland'},
                     'city': 'Białystok',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol',  # noqa: E501
                 },
             ],
             'fullyRemote': True,
@@ -82,14 +82,6 @@ POSTINGS_DATA_DICT_MOCK = {
     'data': POSTINGS_RESPONSE_JSON_DICT_MOCK,
 }
 
-DATA_WAREHOUSE_DB_CONFIG_MOCK = DataWarehouseDbConfig(
-    protocol_name='mysql+pymysql',
-    user_name='it_jobs_meta_worker',
-    password='roottmppass',
-    host_address='0.0.0.0',
-    db_name='it_jobs_meta_datawarehouse',
-)
-
 
 class TestHappyPathPandasDataWarehouseETL:
     def setup_method(self):
@@ -99,10 +91,10 @@ class TestHappyPathPandasDataWarehouseETL:
 
     def test_drops_unwanted_cols_correctly(self):
         result = self.transformer.drop_unwanted(self.df)
-        for key in EtlConstants.COLS_TO_DROP:
+        for key in EtlTransformationEngine.COLS_TO_DROP:
             assert key not in result
 
-    def test_extracts_remote_correclty(self):
+    def test_extracts_remote_correctly(self):
         result = self.transformer.extract_remote(self.df)
         assert 'remote' in result
         assert result.loc['ELGZSKOL']['remote']

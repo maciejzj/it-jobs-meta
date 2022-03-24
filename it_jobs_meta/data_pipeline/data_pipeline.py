@@ -1,76 +1,95 @@
+import datetime as dt
 import logging
 from pathlib import Path
+from time import sleep
 
-from it_jobs_meta.common.utils import setup_logging
+import croniter
 
-from .data_ingestion import NoFluffJobsPostingsDataSource, PostingsDataSource
-from .data_lake import DataLake, RedisDataLake, load_data_lake_db_config
-from .data_warehouse import (
+from it_jobs_meta.data_pipeline.data_ingestion import (
+    NoFluffJobsPostingsDataSource,
+)
+from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
+from it_jobs_meta.data_pipeline.data_warehouse import (
+    EtlLoaderFactory,
     EtlPipeline,
     PandasEtlExtractionFromJsonStr,
-    PandasEtlSqlLoadingEngine,
+    PandasEtlMongodbLoadingEngine,
     PandasEtlTransformationEngine,
-    load_warehouse_db_config,
 )
 
 
-def make_data_lake(data_lake_config_path: Path) -> DataLake:
-    data_lake_config = load_data_lake_db_config(data_lake_config_path)
-    data_lake = RedisDataLake(data_lake_config)
-    return data_lake
+class DataPipeline:
+    def __init__(
+        self,
+        data_lake_factory: DataLakeFactory,
+        etl_loader_factory: EtlLoaderFactory,
+    ):
+        self._data_lake_factory = data_lake_factory
+        self._etl_loader_factory = etl_loader_factory
 
-
-def make_data_warehouse_etl(data_warehouse_config_path: Path) -> EtlPipeline:
-    extracor = PandasEtlExtractionFromJsonStr()
-    transformer = PandasEtlTransformationEngine()
-    loader = PandasEtlSqlLoadingEngine(
-        load_warehouse_db_config(data_warehouse_config_path)
-    )
-    data_warehouse_etl = EtlPipeline(extracor, transformer, loader)
-    return data_warehouse_etl
-
-
-def run_ingest_data(
-    data_source: PostingsDataSource, data_lake: DataLake
-) -> str:
-
-    data = data_source.get()
-    data_key = data.make_key_for_data()
-    json_data_string = data.make_json_str_from_data()
-    data_lake.set_data(data_key, json_data_string)
-    return data_lake.get_data(data_key)
-
-
-def run_data_pipeline(
-    data_lake_config_path: Path, data_warehouse_config_path: Path
-):
-    try:
-        logging.info('Started data pipeline')
-
-        logging.info('Attempting to perform data ingestion step')
-        data_source = NoFluffJobsPostingsDataSource
-        data_lake = make_data_lake(data_lake_config_path)
-        data = run_ingest_data(data_source, data_lake)
-        logging.info('Data ingestion succeeded')
-
-        logging.info('Attempting to perform data warehousing step')
-        data_warehouse_etl = make_data_warehouse_etl(
-            data_warehouse_config_path
+    def schedule(self, cron_expression: str):
+        logging.info(
+            f'Data pipeline scheduled with cron expression: {cron_expression} '
+            'send SIGINT to stop'
         )
-        data_warehouse_etl.run(data)
-        logging.info('Data warehousing succeeded')
 
-        logging.info('Data pipeline succeeded, exiting')
-    except Exception as e:
-        logging.exception(e)
-        raise
+        cron = croniter.croniter(cron_expression, dt.datetime.now())
+
+        try:
+            while True:
+                now = dt.datetime.now()
+                timedelta_till_next_trigger = cron.get_next(dt.datetime) - now
+                sleep(timedelta_till_next_trigger.total_seconds())
+                self.run()
+        except KeyboardInterrupt:
+            logging.info('Data pipeline loop interrupted by user')
+
+    def run(self):
+        try:
+            logging.info('Started data pipeline')
+
+            logging.info('Attempting to perform data ingestion step')
+            data = NoFluffJobsPostingsDataSource.get()
+            logging.info('Data ingestion succeeded')
+
+            logging.info('Attempting to archive raw data in data lake')
+            data_lake = self._data_lake_factory.make()
+
+            data_key = data.make_key_for_data()
+            data_as_json = data.make_json_str_from_data()
+            data_lake.set_data(data_key, data.make_json_str_from_data())
+            logging.info(
+                f'Data archival succeeded, stored under "{data_key}" key'
+            )
+
+            logging.info('Attempting to perform data warehousing step')
+            etl_pipeline = EtlPipeline(
+                PandasEtlExtractionFromJsonStr(),
+                PandasEtlTransformationEngine(),
+                self._etl_loader_factory.make(),
+            )
+            etl_pipeline.run(data_as_json)
+            logging.info('Data warehousing succeeded')
+
+            logging.info('Data pipeline succeeded')
+        except Exception as e:
+            logging.exception(e)
+            raise
 
 
 def main():
-    data_lake_config_path = Path('config/data_lake_db_config.yaml')
-    data_warehouse_config_path = Path('config/warehouse_db_config.yaml')
-    setup_logging()
-    run_data_pipeline(data_lake_config_path, data_warehouse_config_path)
+    test_json_file_path = Path(
+        'it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json'
+    )
+    mongodb_config_path = Path('config/mongodb_config.yaml')
+    with open(test_json_file_path, 'r', encoding='utf-8') as json_data_file:
+        data_as_json = json_data_file.read()
+    etl_pipeline = EtlPipeline(
+        PandasEtlExtractionFromJsonStr(),
+        PandasEtlTransformationEngine(),
+        PandasEtlMongodbLoadingEngine.from_config_file(mongodb_config_path),
+    )
+    etl_pipeline.run(data_as_json)
 
 
 if __name__ == '__main__':

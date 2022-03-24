@@ -1,7 +1,10 @@
+from abc import ABC, abstractmethod
+from enum import Enum, auto
 from typing import Any
 
 import numpy as np
 import pandas as pd
+from dash import dcc
 from plotly import express as px
 from plotly import graph_objects as go
 from sklearn import preprocessing
@@ -11,11 +14,18 @@ def get_n_most_frequent_vals_in_col(col: pd.Series, n: int) -> list[Any]:
     return col.value_counts().nlargest(n).index.to_list()
 
 
-def get_rows_with_n_most_freqent_vals_in_col(
+def get_rows_with_n_most_frequent_vals_in_col(
     df: pd.DataFrame, col_name: str, n: int
 ) -> pd.DataFrame:
     n_most_freq = get_n_most_frequent_vals_in_col(df[col_name], n)
     return df[df[col_name].isin(n_most_freq)]
+
+
+def sort_by_seniority(df: pd.DataFrame) -> pd.DataFrame:
+    SENIORITY_ORDER = {'Trainee': 0, 'Junior': 1, 'Mid': 2, 'Senior': 3}
+
+    sorted = df.sort_values('seniority', key=lambda x: x.map(SENIORITY_ORDER))
+    return sorted
 
 
 def move_legend_to_top(fig: go.Figure) -> go.Figure:
@@ -36,13 +46,58 @@ def center_title(fig: go.Figure) -> go.Figure:
     return fig
 
 
-class TechnologiesPieChart:
+class Graph(Enum):
+    REMOTE_PIE_CHART = auto()
+    TECHNOLOGIES_PIE_CHART = auto()
+    CATEGORIES_PIE_CHART = auto()
+    SENIORITY_PIE_CHART = auto()
+    CAT_TECH_SANKEY_CHART = auto()
+    SALARIES_MAP = auto()
+    SENIORITIES_HISTOGRAM = auto()
+    TECHNOLOGIES_VIOLIN_PLOT = auto()
+    CONTRACT_TYPE_VIOLIN_PLOT = auto()
+    SALARIES_MAP_JUNIOR = auto()
+    SALARIES_MAP_MID = auto()
+    SALARIES_MAP_SENIOR = auto()
+
+
+class GraphFigure(ABC):
+    @classmethod
+    @abstractmethod
+    def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
+        pass
+
+
+class GraphRegistry:
+    _graph_makers: dict[Graph, GraphFigure] = {}
+
+    @classmethod
+    def register(cls, key: Graph):
+        return lambda graph_figure: cls._register_inner(key, graph_figure)
+
+    @classmethod
+    def make(cls, postings_df: pd.DataFrame) -> dict[Graph, dcc.Graph]:
+        graphs: dict[Graph, go.Figure] = {}
+        for graph_key in cls._graph_makers:
+            graphs[graph_key] = dcc.Graph(
+                figure=cls._graph_makers[graph_key].make_fig(postings_df)
+            )
+        return graphs
+
+    @classmethod
+    def _register_inner(cls, key: Graph, graph_figure: GraphFigure):
+        cls._graph_makers[key] = graph_figure
+        return graph_figure
+
+
+@GraphRegistry.register(key=Graph.TECHNOLOGIES_PIE_CHART)
+class TechnologiesPieChart(GraphFigure):
     TITLE = 'Main technology'
     N_MOST_FREQ = 12
 
     @classmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
-        tech_most_freq_df = get_rows_with_n_most_freqent_vals_in_col(
+        tech_most_freq_df = get_rows_with_n_most_frequent_vals_in_col(
             postings_df, 'technology', cls.N_MOST_FREQ
         )
 
@@ -52,13 +107,14 @@ class TechnologiesPieChart:
         return fig
 
 
-class CategoriesPieChart:
+@GraphRegistry.register(key=Graph.CATEGORIES_PIE_CHART)
+class CategoriesPieChart(GraphFigure):
     TITLE = 'Main category'
     N_MOST_FREQ = 12
 
     @classmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
-        cat_largest_df = get_rows_with_n_most_freqent_vals_in_col(
+        cat_largest_df = get_rows_with_n_most_frequent_vals_in_col(
             postings_df, 'category', cls.N_MOST_FREQ
         )
 
@@ -68,7 +124,8 @@ class CategoriesPieChart:
         return fig
 
 
-class CategoriesTechnologiesSankeyChart:
+@GraphRegistry.register(key=Graph.CAT_TECH_SANKEY_CHART)
+class CategoriesTechnologiesSankeyChart(GraphFigure):
     TITLE = 'Categories and technologies share'
     N_MOST_FREQ_CAT = 12
     N_MOST_FREQ_TECH = 12
@@ -106,10 +163,12 @@ class CategoriesTechnologiesSankeyChart:
         fig = go.Figure(
             data=[
                 go.Sankey(
-                    node=dict(label=np.unique(sources + targets)),
-                    link=dict(
-                        source=sources_e, target=targets_e, value=values
-                    ),
+                    node={'label': np.unique(sources + targets)},
+                    link={
+                        'source': sources_e,
+                        'target': targets_e,
+                        'value': values,
+                    },
                 )
             ]
         )
@@ -118,30 +177,32 @@ class CategoriesTechnologiesSankeyChart:
         return fig
 
 
-class SeniorityPieChart:
+@GraphRegistry.register(key=Graph.SENIORITY_PIE_CHART)
+class SeniorityPieChart(GraphFigure):
     TITLE = 'Seniority'
 
     @classmethod
-    def make_fig(cls, seniorities_df: pd.DataFrame) -> go.Figure:
-        fig = px.pie(seniorities_df, names='seniority', title=cls.TITLE)
+    def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
+        postings_df = postings_df.explode('seniority')
+        fig = px.pie(postings_df, names='seniority', title=cls.TITLE)
         fig = center_title(fig)
         return fig
 
 
-class SenioritiesHistogram:
+@GraphRegistry.register(key=Graph.SENIORITIES_HISTOGRAM)
+class SenioritiesHistogram(GraphFigure):
     TITLE = 'Histogram'
     MAX_SALARY = 40000
 
     @classmethod
-    def make_fig(
-        cls, seniorities_df: pd.DataFrame, salaries_df: pd.DataFrame
-    ) -> go.Figure:
-        sen_sal_df = seniorities_df.merge(salaries_df, on='id')
-        sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] < cls.MAX_SALARY]
-        sen_sal_df = sen_sal_df[sen_sal_df['salary_mean'] > 0]
+    def make_fig(cls, postings_df) -> go.Figure:
+        postings_df = postings_df.explode('seniority')
+        postings_df = postings_df[postings_df['salary_mean'] < cls.MAX_SALARY]
+        postings_df = postings_df[postings_df['salary_mean'] > 0]
+        postings_df = sort_by_seniority(postings_df)
 
         fig = px.histogram(
-            sen_sal_df, x='salary_mean', color='seniority', title=cls.TITLE
+            postings_df, x='salary_mean', color='seniority', title=cls.TITLE
         )
         fig = fig.update_layout(
             legend_title_text=None,
@@ -152,34 +213,38 @@ class SenioritiesHistogram:
         return fig
 
 
-class RemotePieChart:
+@GraphRegistry.register(key=Graph.REMOTE_PIE_CHART)
+class RemotePieChart(GraphFigure):
     TITLE = 'Fully remote work possible'
 
     @classmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
-        remote_df = postings_df['remote'].replace({1: 'Yes', 0: 'No'})
+        remote_df = postings_df['remote'].replace({True: 'Yes', False: 'No'})
 
         fig = px.pie(remote_df, names='remote', title=cls.TITLE)
         fig = center_title(fig)
         return fig
 
 
-class SalariesMap:
+@GraphRegistry.register(key=Graph.SALARIES_MAP)
+class SalariesMap(GraphFigure):
     TITLE = 'Mean salary by location (PLN)'
-    MIN_CITY_FREQ = 15
+    MIN_CITY_FREQ = 25
 
     @classmethod
-    def make_fig(
-        cls, locations_df: pd.DataFrame, salaries_df: pd.DataFrame
-    ) -> go.Figure:
+    def make_fig(cls, postings_df) -> go.Figure:
+        postings_df = postings_df.explode('city')
+        postings_df[['city', 'lat', 'lon']] = postings_df['city'].transform(
+            lambda city: pd.Series([city[0], city[1], city[2]])
+        )
 
-        loc_sal_df = locations_df.merge(salaries_df, on='id')
-        job_counts = loc_sal_df.groupby('city')['id'].count()
-        job_counts = job_counts.rename('job_counts')
-
-        salaries = loc_sal_df.groupby('city')[['salary_mean', 'lat', 'lon']]
-        salaries = salaries.mean()
-        cities_salaries = pd.concat([job_counts, salaries], axis=1)
+        job_counts = postings_df.groupby('city')['_id'].count()
+        salaries = postings_df.groupby('city')[
+            ['salary_mean', 'lat', 'lon']
+        ].mean()
+        cities_salaries = pd.concat(
+            [job_counts.rename('job_counts'), salaries], axis=1
+        )
         more_than_min = cities_salaries['job_counts'] > cls.MIN_CITY_FREQ
         cities_salaries = cities_salaries[more_than_min]
         cities_salaries = cities_salaries.reset_index()
@@ -193,8 +258,11 @@ class SalariesMap:
             color='salary_mean',
             title=cls.TITLE,
             fitbounds='locations',
-            labels={'salary_mean': 'Mean salary'},
-            hover_data={'city': True},
+            labels={
+                'salary_mean': 'Mean salary',
+                'job_counts': 'Number of jobs',
+            },
+            hover_data={'city': True, 'lat': False, 'lon': False},
         )
         fig = center_title(fig)
         return fig
@@ -204,137 +272,80 @@ class SalariesMapFilteredBySeniority:
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        postings_df,
         seniority: str,
     ) -> go.Figure:
 
-        loc_sen_df = locations_df.merge(seniorities_df, on='id')
-        loc_sen_df = loc_sen_df[loc_sen_df['seniority'] == seniority]
+        postings_df = postings_df.explode('seniority')
+        postings_df = postings_df[postings_df['seniority'] == seniority]
 
-        fig = SalariesMap.make_fig(loc_sen_df, salaries_df)
+        fig = SalariesMap.make_fig(postings_df)
+        fig = fig.update_layout(margin={'l': 65, 'r': 65, 'b': 60})
         return fig
 
 
-class SalariesMapJunior:
+@GraphRegistry.register(key=Graph.SALARIES_MAP_JUNIOR)
+class SalariesMapJunior(GraphFigure):
     TITLE = 'Mean salary for Juniors'
 
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        postings_df,
     ) -> go.Figure:
 
-        fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Junior'
-        )
+        fig = SalariesMapFilteredBySeniority.make_fig(postings_df, 'Junior')
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
         fig = center_title(fig)
         return fig
 
 
-class SalariesMapMid:
+@GraphRegistry.register(key=Graph.SALARIES_MAP_MID)
+class SalariesMapMid(GraphFigure):
     TITLE = 'Mean salary for Mids'
 
     @classmethod
     def make_fig(
         cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
+        postings_df,
     ) -> go.Figure:
 
-        fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Mid'
-        )
+        fig = SalariesMapFilteredBySeniority.make_fig(postings_df, 'Mid')
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
         fig = center_title(fig)
         return fig
 
 
-class SalariesMapSenior:
+@GraphRegistry.register(key=Graph.SALARIES_MAP_SENIOR)
+class SalariesMapSenior(GraphFigure):
     TITLE = 'Mean salary for Seniors'
 
     @classmethod
-    def make_fig(
-        cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
-    ) -> go.Figure:
-
-        fig = SalariesMapFilteredBySeniority.make_fig(
-            locations_df, salaries_df, seniorities_df, 'Senior'
-        )
+    def make_fig(cls, postings_df) -> go.Figure:
+        fig = SalariesMapFilteredBySeniority.make_fig(postings_df, 'Senior')
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
         fig = center_title(fig)
         return fig
 
 
-class SalariesSenioritiesMapChart:
-    TITLE = 'Mean salary and number of job offers'
-    MIN_CITY_FREQ = 10
-
-    @classmethod
-    def make_fig(
-        cls,
-        locations_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        seniorities_df: pd.DataFrame,
-    ) -> go.Figure:
-
-        loc_sal_df = locations_df.merge(salaries_df, on='id')
-        lss_df = loc_sal_df.merge(seniorities_df, on='id')
-
-        lss_df = lss_df[lss_df['seniority'].isin(('Junior', 'Mid', 'Senior'))]
-        salaries = lss_df.groupby(['seniority', 'city'])[
-            ['salary_mean', 'lat', 'lon']
-        ].mean()
-        job_counts = lss_df.groupby(['seniority', 'city'])['id'].count()
-        jobs_cities_salaries = pd.concat(
-            [salaries, job_counts.rename('job_counts')], axis=1
-        ).reset_index()
-
-        fig = px.scatter_geo(
-            jobs_cities_salaries,
-            scope='europe',
-            lat='lat',
-            lon='lon',
-            size='job_counts',
-            color='salary_mean',
-            fitbounds='locations',
-            title='Salary mean and jobs number',
-            hover_data={'city': True},
-            facet_col='seniority',
-        )
-        fig = move_legend_to_top(fig)
-        fig = center_title(fig)
-        return fig
-
-
-class TechnologiesViolinChart:
-    TITLE = 'Salary violin plot in regard to senioroty'
-    MAX_SALARY = 40000
+@GraphRegistry.register(key=Graph.TECHNOLOGIES_VIOLIN_PLOT)
+class TechnologiesViolinChart(GraphFigure):
+    TITLE = 'Violin plot split by seniority'
+    MAX_SALARY = 35000
     N_MOST_FREQ_TECH = 8
 
     @classmethod
     def make_fig(
         cls,
-        postings_df: pd.DataFrame,
-        salaries_df: pd.DataFrame,
-        senorities_df: pd.DataFrame,
+        postings_df,
     ) -> go.Figure:
 
-        pos_sal_df = postings_df.merge(salaries_df, on='id')
-        pss_df = pos_sal_df.merge(senorities_df, on='id')
-        tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
-            pss_df, 'technology', cls.N_MOST_FREQ_TECH
+        postings_df = postings_df.explode('seniority')
+        tech_most_freq = get_rows_with_n_most_frequent_vals_in_col(
+            postings_df, 'technology', cls.N_MOST_FREQ_TECH
         )
         limited = tech_most_freq[
             tech_most_freq['salary_mean'] < cls.MAX_SALARY
@@ -342,39 +353,41 @@ class TechnologiesViolinChart:
         limited = limited[
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
+        limited = sort_by_seniority(limited)
 
         fig = px.violin(
             limited,
-            y='salary_mean',
-            x='technology',
+            x='salary_mean',
+            y='technology',
             color='seniority',
             violinmode='overlay',
             title=cls.TITLE,
             points=False,
         )
         fig = move_legend_to_top(fig)
-        fig = fig.update_traces(spanmode='hard', meanline_visible=True)
+        fig = fig.update_traces(
+            side='positive', width=1.5, spanmode='hard', meanline_visible=True
+        )
         fig = fig.update_layout(
-            yaxis_title_text='Mean salary (PLN)',
-            xaxis_title_text='Technology',
+            height=600,
+            xaxis_title_text='Mean salary (PLN)',
+            yaxis_title_text='Technology',
             legend_title_text=None,
         )
         fig = center_title(fig)
         return fig
 
 
-class ContractTypeViolinChart:
-    TITLE = 'Salary violin plot in regard to contract'
+@GraphRegistry.register(key=Graph.CONTRACT_TYPE_VIOLIN_PLOT)
+class ContractTypeViolinChart(GraphFigure):
+    TITLE = 'Violin plot split by contract'
     MAX_SALARY = 40000
     N_MOST_FREQ_TECH = 8
 
     @classmethod
-    def make_fig(
-        cls, postings_df: pd.DataFrame, salaries_df: pd.DataFrame
-    ) -> go.Figure:
-        pos_sal_df = postings_df.merge(salaries_df, on='id')
-        tech_most_freq = get_rows_with_n_most_freqent_vals_in_col(
-            pos_sal_df, 'technology', cls.N_MOST_FREQ_TECH
+    def make_fig(cls, postings_df) -> go.Figure:
+        tech_most_freq = get_rows_with_n_most_frequent_vals_in_col(
+            postings_df, 'technology', cls.N_MOST_FREQ_TECH
         )
         limited = tech_most_freq[
             tech_most_freq['salary_mean'] < cls.MAX_SALARY
@@ -407,7 +420,7 @@ class ContractTypeViolinChart:
                 points=False,
             )
         )
-        fig.update_traces(meanline_visible=True)
+        fig.update_traces(meanline_visible=True, width=0.9)
         fig.update_layout(
             violingap=0,
             violinmode='overlay',

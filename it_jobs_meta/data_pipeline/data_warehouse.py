@@ -1,21 +1,30 @@
 import dataclasses
 import re
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from enum import Enum, auto
 from pathlib import Path
 from typing import Generic, TypeVar
 
 import pandas as pd
+import pymongo
 import sqlalchemy as db
-import yaml
 
-from .data_formats import NoFluffJObsPostingsData
-from .data_validation import Schemas
-from .geolocator import Geolocator
+from it_jobs_meta.common.utils import load_yaml_as_dict
+from it_jobs_meta.data_pipeline.data_formats import NoFluffJObsPostingsData
+from it_jobs_meta.data_pipeline.data_validation import Schemas
+from it_jobs_meta.data_pipeline.geolocator import Geolocator
+
+DataType = TypeVar('DataType')
+PipelineInputType = TypeVar('PipelineInputType')
 
 
-@dataclass
-class EtlConstants:
+class EtlExtractionEngine(Generic[PipelineInputType, DataType], ABC):
+    @abstractmethod
+    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
+        pass
+
+
+class EtlTransformationEngine(Generic[DataType], ABC):
     COLS_TO_DROP = [
         'renewed',
         'logo',
@@ -48,48 +57,6 @@ class EtlConstants:
         'b2b': 'B2B',
     }
 
-    POSTINGS_TABLE_COLS = [
-        'name',
-        'posted',
-        'title',
-        'technology',
-        'category',
-        'url',
-        'remote',
-    ]
-
-    SALARIES_TABLE_COLS = [
-        'contract_type',
-        'salary_min',
-        'salary_max',
-        'salary_mean',
-    ]
-
-    LOCATIONS_TABLE_COLS = ['city', 'lat', 'lon']
-
-    SENIORITY_TABLE_COLS = ['seniority']
-
-
-@dataclass
-class DataWarehouseDbConfig:
-    protocol_name: str
-    user_name: str
-    password: str
-    host_address: str
-    db_name: str
-
-
-DataType = TypeVar('DataType')
-PipelineInputType = TypeVar('PipelineInputType')
-
-
-class EtlExtractionEngine(Generic[PipelineInputType, DataType], ABC):
-    @abstractmethod
-    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
-        pass
-
-
-class EtlTransformationEngine(Generic[DataType], ABC):
     @abstractmethod
     def drop_unwanted(self, data: DataType) -> DataType:
         pass
@@ -136,33 +103,17 @@ class EtlLoadingEngine(Generic[DataType], ABC):
     def load_tables_to_warehouse(self, metadata: DataType, data: DataType):
         pass
 
-    @abstractmethod
-    def prepare_postings_table(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def prepare_salaries_table(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def prepare_locations_table(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def prepare_seniorities_table(self, data: DataType) -> DataType:
-        pass
-
 
 class EtlPipeline(Generic[DataType, PipelineInputType]):
     def __init__(
         self,
         extraction_engine: EtlExtractionEngine[PipelineInputType, DataType],
-        transofrmation_engine: EtlTransformationEngine[DataType],
+        transformation_engine: EtlTransformationEngine[DataType],
         loading_engine: EtlLoadingEngine[DataType],
     ):
 
         self._extraction_engine = extraction_engine
-        self._transformation_engine = transofrmation_engine
+        self._transformation_engine = transformation_engine
         self._loading_engine = loading_engine
 
     def run(self, input_: PipelineInputType):
@@ -188,20 +139,6 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
 
     def load(self, metadata: DataType, data: DataType):
         self._loading_engine.load_tables_to_warehouse(metadata, data)
-
-
-def make_db_uri_from_config(config: DataWarehouseDbConfig) -> str:
-    ret = (
-        f'{config.protocol_name}://{config.user_name}:{config.password}'
-        f'@{config.host_address}/{config.db_name}'
-    )
-    return ret
-
-
-def load_warehouse_db_config(path: Path) -> DataWarehouseDbConfig:
-    with open(path, 'r', encoding='UTF-8') as cfg_file:
-        cfg_dict = yaml.safe_load(cfg_file)
-        return DataWarehouseDbConfig(**cfg_dict)
 
 
 class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
@@ -239,27 +176,27 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
 
 class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def __init__(self):
-        self._geolocator = Geolocator()
+        self._geolocator = Geolocator(country_filter=('Polska'))
 
     def drop_unwanted(self, data: pd.DataFrame) -> pd.DataFrame:
-        return data.drop(columns=EtlConstants.COLS_TO_DROP)
+        return data.drop(columns=EtlTransformationEngine.COLS_TO_DROP)
 
     def drop_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
         return data[~data.index.duplicated(keep='first')]
 
     def replace_values(self, data: pd.DataFrame) -> pd.DataFrame:
-        return data.replace(to_replace=EtlConstants.VALS_TO_REPLACE)
+        return data.replace(to_replace=EtlTransformationEngine.VALS_TO_REPLACE)
 
     def to_title_case(self, data: pd.DataFrame) -> pd.DataFrame:
-        for col in EtlConstants.COLS_TO_TITLE_CASE:
+        for col in EtlTransformationEngine.COLS_TO_TITLE_CASE:
             data[col] = data[col][data[col].notna()].transform(
                 lambda s: re.sub(r'([A-Z])', r' \1', s).title()
             )
         return data
 
     def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
-        specials = EtlConstants.CAPITALIZE_SPECIAL_NAMES
-        for col in EtlConstants.COLS_TO_CAPITALIZE:
+        specials = EtlTransformationEngine.CAPITALIZE_SPECIAL_NAMES
+        for col in EtlTransformationEngine.COLS_TO_CAPITALIZE:
             data[col] = data[col][data[col].notna()].transform(
                 lambda s: specials[s] if s in specials else s.capitalize()
             )
@@ -310,14 +247,94 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         return data
 
 
-class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
-    def __init__(self, db_config: DataWarehouseDbConfig):
-        self._db_con = db.create_engine(make_db_uri_from_config(db_config))
+class PandasEtlMongodbLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
+    POSTINGS_TABLE_COLS = [
+        'name',
+        'posted',
+        'title',
+        'technology',
+        'category',
+        'url',
+        'remote',
+        'contract_type',
+        'salary_min',
+        'salary_max',
+        'salary_mean',
+        'city',
+        'seniority',
+    ]
+
+    def __init__(
+        self,
+        user_name: str,
+        password: str,
+        host: str,
+        db_name: str,
+        port=27017,
+    ):
+        self._db_client = pymongo.MongoClient(
+            f'mongodb://{user_name}:{password}@{host}:{port}'
+        )
+        self._db = self._db_client[db_name]
+
+    @classmethod
+    def from_config_file(
+        cls, config_path: Path
+    ) -> 'PandasEtlMongodbLoadingEngine':
+        return cls(**load_yaml_as_dict(config_path))
 
     def load_tables_to_warehouse(
         self, metadata: pd.DataFrame, data: pd.DataFrame
     ):
+        self._db['metadata'].drop()
+        self._db['postings'].drop()
 
+        self._db['metadata'].insert_one(metadata.to_dict('records')[0])
+        self._db['postings'].insert_many(
+            data[PandasEtlMongodbLoadingEngine.POSTINGS_TABLE_COLS]
+            .reset_index()
+            .to_dict('records')
+        )
+
+
+class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
+    POSTINGS_TABLE_COLS = [
+        'name',
+        'posted',
+        'title',
+        'technology',
+        'category',
+        'url',
+        'remote',
+    ]
+
+    SALARIES_TABLE_COLS = [
+        'contract_type',
+        'salary_min',
+        'salary_max',
+        'salary_mean',
+    ]
+
+    LOCATIONS_TABLE_COLS = ['city', 'lat', 'lon']
+
+    SENIORITY_TABLE_COLS = ['seniority']
+
+    def __init__(
+        self, user_name: str, password: str, host: str, db_name: str, port=3306
+    ):
+        self._db_con = db.create_engine(
+            f'mysql+pymysql://{user_name}:{password}@{host}:{port}/{db_name}'
+        )
+
+    @classmethod
+    def from_config_file(
+        cls, config_file_path: Path
+    ) -> 'PandasEtlSqlLoadingEngine':
+        return cls(**load_yaml_as_dict(config_file_path))
+
+    def load_tables_to_warehouse(
+        self, metadata: pd.DataFrame, data: pd.DataFrame
+    ):
         metadata.to_sql('metadata', con=self._db_con, if_exists='replace')
 
         postings_df = self.prepare_postings_table(data)
@@ -335,11 +352,15 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         )
 
     def prepare_postings_table(self, data: pd.DataFrame) -> pd.DataFrame:
-        postings_df = data[EtlConstants.POSTINGS_TABLE_COLS].reset_index()
+        postings_df = data[
+            PandasEtlSqlLoadingEngine.POSTINGS_TABLE_COLS
+        ].reset_index()
         return Schemas.postings.validate(postings_df)
 
     def prepare_salaries_table(self, data: pd.DataFrame) -> pd.DataFrame:
-        salaries_df = data[EtlConstants.SALARIES_TABLE_COLS].reset_index()
+        salaries_df = data[
+            PandasEtlSqlLoadingEngine.SALARIES_TABLE_COLS
+        ].reset_index()
         return Schemas.salaries.validate(salaries_df)
 
     def prepare_locations_table(self, data: pd.DataFrame) -> pd.DataFrame:
@@ -347,13 +368,42 @@ class PandasEtlSqlLoadingEngine(EtlLoadingEngine[pd.DataFrame]):
         locations_df[['city', 'lat', 'lon']] = locations_df['city'].transform(
             lambda city: pd.Series([city[0], city[1], city[2]])
         )
-        locations_df = locations_df[EtlConstants.LOCATIONS_TABLE_COLS]
+        locations_df = locations_df[
+            PandasEtlSqlLoadingEngine.LOCATIONS_TABLE_COLS
+        ]
         locations_df = locations_df.dropna().reset_index()
         return Schemas.locations.validate(locations_df)
 
     def prepare_seniorities_table(self, data: pd.DataFrame) -> pd.DataFrame:
         seniority_df = data.explode('seniority')
         seniority_df = seniority_df[
-            EtlConstants.SENIORITY_TABLE_COLS
+            PandasEtlSqlLoadingEngine.SENIORITY_TABLE_COLS
         ].reset_index()
         return Schemas.seniorities.validate(seniority_df)
+
+
+class EtlLoaderImpl(Enum):
+    MONGODB = auto()
+    SQL = auto()
+
+
+class EtlLoaderFactory:
+    def __init__(self, impl_type: EtlLoaderImpl, config_path: Path):
+        self._impl_type = impl_type
+        self._config_path = config_path
+
+    def make(self) -> EtlLoadingEngine:
+        match self._impl_type:
+            case EtlLoaderImpl.MONGODB:
+                return PandasEtlMongodbLoadingEngine.from_config_file(
+                    self._config_path
+                )
+            case EtlLoaderImpl.SQL:
+                return PandasEtlSqlLoadingEngine.from_config_file(
+                    self._config_path
+                )
+            case _:
+                raise ValueError(
+                    'Selected ETL loader implementation is not supported or '
+                    'invalid'
+                )

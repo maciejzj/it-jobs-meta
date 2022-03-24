@@ -1,0 +1,4 @@
+user_name: 'it_jobs_meta_worker'
+password: 'pass'
+host: 'localhost'
+db_name: 'it_jobs_meta_datawarehouse'

@@ -1,7 +1,9 @@
 import datetime
 import json
 
-from ..data_ingestion import NoFluffJobsPostingsDataSource
+from it_jobs_meta.data_pipeline.data_ingestion import (
+    NoFluffJobsPostingsDataSource,
+)
 
 
 class MockResponse:
@@ -32,7 +34,7 @@ class TestNoFluffJobsPostingsDataSource:
         assert obtained_datetime == expected
 
     def test_make_data_key_returns_correct_key(self, mocker):
-        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
+        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5).replace(tzinfo=None)
         expected = '1638343805_nofluffjobs'
         datetime_mock = mocker.patch('datetime.datetime')
         datetime_mock.now.return_value = datetime_
@@ -57,7 +59,7 @@ class TestNoFluffJobsPostingsDataSource:
 
     def test_make_json_string_returns_correct_metadata(self, mocker):
         datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
-        expected_json_metatada_str = {
+        expected_json_metadata_str = {
             'source_name': 'nofluffjobs',
             'obtained_datetime': '2021-12-01 08:30:05',
         }
@@ -70,5 +72,5 @@ class TestNoFluffJobsPostingsDataSource:
         result = data.make_json_str_from_data()
         result_back_to_json_dict = json.loads(result)
         assert (
-            result_back_to_json_dict['metadata'] == expected_json_metatada_str
+            result_back_to_json_dict['metadata'] == expected_json_metadata_str
         )
