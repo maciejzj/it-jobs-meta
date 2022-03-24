@@ -1,5 +1,7 @@
 # IT Jobs Meta
 
+[![Quality checks](https://github.com/maciejzj/it-jobs-meta/actions/workflows/quality_checks.yml/badge.svg)](https://github.com/maciejzj/it-jobs-meta/actions/workflows/quality_checks.yml)
+
 Data pipeline and meta-analysis dashboard for IT job postings from the web.
 
 This application serves as a data analysis service based on postings from [No
@@ -121,7 +123,7 @@ options:
 ```
 
 There are several backend implementations for the data lake and the data
-warehouse. It is preferred to use Redis for development and AWS S3 bucket in
+warehouse. It is preferred to use Redis for development and AWS S3 Bucket in
 deployment. Preprocessed data can be stored either as NoSQL with MongDB or SQL
 with MariaDB. The dashboard supports only the MongoDB database as the data
 provider.
