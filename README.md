@@ -67,7 +67,7 @@ Refer to further sections of this file for advice on that.
 Resort to the command line help to discover available options:
 
 ```
-$ it_jobs_meta -h
+$ it-jobs-meta -h
 usage: it-jobs-meta [-h] [-l LOG_PATH] {pipeline,dashboard} ...
 
 Data pipeline and meta-analysis dashboard for IT job postings
@@ -89,7 +89,7 @@ store it in the *data lake* in a raw form, and in *data warehouse* in a
 processed form (ready to be used by the dashboard later).
 
 ```
-$ it_jobs_meta -h
+$ it-jobs-meta -h
 usage: it-jobs-meta pipeline [-h] [-c CRON_EXPRESSION] (-r CONFIG_PATH | -b CONFIG_PATH) (-m CONFIG_PATH | -s CONFIG_PATH)
 
 Run data pipeline once or periodically, scrap data, store it in the data lake, load processed data to the data warehouse.
@@ -112,7 +112,7 @@ The `dashboard` subcommand runs the dashboard server; use it to visualize the
 data after the data is scrapped with the `pipeline` subcommand.
 
 ```
-$ it_jobs_meta -h
+$ it-jobs-meta -h
 usage: it-jobs-meta dashboard [-h] [-w] -m CONFIG_PATH
 
 options:
