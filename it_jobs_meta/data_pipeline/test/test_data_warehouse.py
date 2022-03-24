@@ -8,6 +8,7 @@ from it_jobs_meta.data_pipeline.data_warehouse import (
     PandasEtlTransformationEngine,
 )
 
+
 POSTINGS_LIST_MOCK = [
     {
         'id': 'ELGZSKOL',
@@ -19,21 +20,21 @@ POSTINGS_LIST_MOCK = [
                     'city': 'Warsaw',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-warsaw-elgzskol',  # noqa: E501
                 },
                 {
                     'country': {'code': 'POL', 'name': 'Poland'},
                     'city': 'Gdynia',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-gdynia-elgzskol',  # noqa: E501
                 },
                 {
                     'country': {'code': 'POL', 'name': 'Poland'},
                     'city': 'Białystok',
                     'street': '',
                     'postalCode': '',
-                    'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol',
+                    'url': 'sql-developer-node-js-acaisoft-poland-bialystok-elgzskol',  # noqa: E501
                 },
             ],
             'fullyRemote': True,

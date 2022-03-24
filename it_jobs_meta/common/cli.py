@@ -16,7 +16,7 @@ class CliArgumentParser:
     def __init__(self):
         self._args: dict[str, Any] | None = None
         self._parser = argparse.ArgumentParser(
-            prog=self.PROG, description=self.DESCRIPTION
+            prog=self.PROG, description=self.DESCRIPTION, formatter_class=argparse.ArgumentDefaultsHelpFormatter
         )
         self._subparsers = self._parser.add_subparsers(
             dest='command', required=True
@@ -67,7 +67,8 @@ class CliArgumentParser:
 
     def _build_main_command(self):
         self._parser.add_argument(
-            '-l', '--log-path', default=Path('var/it_jobs_meta.log'), type=Path
+            '-l', '--log-path', default=Path('var/it_jobs_meta.log'), type=Path,
+            help='path to the log file'
         )
 
     def _build_pipeline_command(self):

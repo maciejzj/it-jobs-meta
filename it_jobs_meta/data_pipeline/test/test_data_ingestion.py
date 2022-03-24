@@ -34,7 +34,7 @@ class TestNoFluffJobsPostingsDataSource:
         assert obtained_datetime == expected
 
     def test_make_data_key_returns_correct_key(self, mocker):
-        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
+        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5).replace(tzinfo=None)
         expected = '1638343805_nofluffjobs'
         datetime_mock = mocker.patch('datetime.datetime')
         datetime_mock.now.return_value = datetime_

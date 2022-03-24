@@ -43,7 +43,7 @@ class DashboardApp:
                 title='IT Jobs Meta',
                 meta_tags=[
                     {
-                        'description': 'Weekly analysis of IT job offers in Poland',
+                        'description': 'Weekly analysis of IT job offers in Poland',  # noqa: E501
                         'keywords': 'Programming, Software, IT, Jobs',
                         'name': 'viewport',
                         'content': 'width=device-width, initial-scale=1',

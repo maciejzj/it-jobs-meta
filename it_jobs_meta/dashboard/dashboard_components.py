@@ -22,12 +22,7 @@ def get_rows_with_n_most_frequent_vals_in_col(
 
 
 def sort_by_seniority(df: pd.DataFrame) -> pd.DataFrame:
-    SENIORITY_ORDER = {
-        'Trainee': 0,
-        'Junior': 1,
-        'Mid': 2,
-        'Senior': 3
-    }
+    SENIORITY_ORDER = {'Trainee': 0, 'Junior': 1, 'Mid': 2, 'Senior': 3}
 
     sorted = df.sort_values('seniority', key=lambda x: x.map(SENIORITY_ORDER))
     return sorted
@@ -263,7 +258,10 @@ class SalariesMap(GraphFigure):
             color='salary_mean',
             title=cls.TITLE,
             fitbounds='locations',
-            labels={'salary_mean': 'Mean salary', 'job_counts': 'Number of jobs'},
+            labels={
+                'salary_mean': 'Mean salary',
+                'job_counts': 'Number of jobs',
+            },
             hover_data={'city': True, 'lat': False, 'lon': False},
         )
         fig = center_title(fig)
