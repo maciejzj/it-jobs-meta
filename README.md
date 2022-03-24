@@ -81,8 +81,8 @@ options:
                         path to the log file (default: var/it_jobs_meta.log)
 ```
 
-> 📝 Notice: if you don't want to store the log output in a file redirect it to
-> `/dev/null` (e.g. `it-jobs-meta -l /dev/null ...`)
+> 📝 **Notice:** If you don't want to store the log output in a file redirect it
+> to `/dev/null` (e.g. `it-jobs-meta -l /dev/null ...`)
 
 The `pipeline` subcommand is used to scrap the job postings data from the web,
 store it in the *data lake* in a raw form, and in *data warehouse* in a
@@ -133,7 +133,7 @@ provider.
 There are several options that require passing a path to yaml config path as an
 argument. The reference config files are stored in the `config` directory.
 
-> ❗️ Warning: The config files match the services configuration in the
+> ❗️ **Warning:** The config files match the services configuration in the
 > `docker-compose.yml` file. If you wish to run this app publicly change the
 > login credentials.
 
