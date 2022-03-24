@@ -12,11 +12,18 @@ class CliArgumentParser:
     DESCRIPTION = (
         'Data pipeline and meta-analysis dashboard for IT job postings'
     )
+    PIPELINE_DESCRIPTION = (
+        'Run data pipeline once or periodically, scrap data, store it in the '
+        'data lake, load processed data to the data warehouse.'
+    )
+    DASHBOARD_DESCRIPTION = 'Run data visualization dashboard server.'
 
     def __init__(self):
         self._args: dict[str, Any] | None = None
         self._parser = argparse.ArgumentParser(
-            prog=self.PROG, description=self.DESCRIPTION, formatter_class=argparse.ArgumentDefaultsHelpFormatter
+            prog=self.PROG,
+            description=self.DESCRIPTION,
+            formatter_class=argparse.ArgumentDefaultsHelpFormatter,
         )
         self._subparsers = self._parser.add_subparsers(
             dest='command', required=True
@@ -67,21 +74,36 @@ class CliArgumentParser:
 
     def _build_main_command(self):
         self._parser.add_argument(
-            '-l', '--log-path', default=Path('var/it_jobs_meta.log'), type=Path,
-            help='path to the log file'
+            '-l',
+            '--log-path',
+            default=Path('var/it_jobs_meta.log'),
+            type=Path,
+            help='path to the log file',
         )
 
     def _build_pipeline_command(self):
-        parser_pipeline = self._subparsers.add_parser('pipeline')
+        parser_pipeline = self._subparsers.add_parser(
+            'pipeline', description=self.PIPELINE_DESCRIPTION
+        )
 
         parser_pipeline.add_argument(
-            '-c', '--schedule', metavar='CRON_EXPRESSION', action='store'
+            '-c',
+            '--schedule',
+            metavar='CRON_EXPRESSION',
+            action='store',
+            type=str,
+            help='schedule pipeline to run periodically with a cron expression', #  noqa: E501
         )
         data_lake_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
         )
         data_lake_arg_grp.add_argument(
-            '-r', '--redis', metavar='CONFIG_PATH', action='store', type=Path
+            '-r',
+            '--redis',
+            metavar='CONFIG_PATH',
+            action='store',
+            type=Path,
+            help='choose Redis as the data lake with given config file',
         )
         data_lake_arg_grp.add_argument(
             '-b',
@@ -89,28 +111,48 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
+            help='choose S3 Bucket as the data lake with given config file',
         )
 
         etl_loader_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
         )
         etl_loader_arg_grp.add_argument(
-            '-m', '--mongodb', metavar='CONFIG_PATH', action='store', type=Path
+            '-m',
+            '--mongodb',
+            metavar='CONFIG_PATH',
+            action='store',
+            type=Path,
+            help='choose MongoDB as the data warehouse with given config file',
         )
         etl_loader_arg_grp.add_argument(
-            '-s', '--sql', metavar='CONFIG_PATH', action='store', type=Path
+            '-s',
+            '--sql',
+            metavar='CONFIG_PATH',
+            action='store',
+            type=Path,
+            help='choose MariaDB as the data warehouse with given config file',
         )
 
     def _build_dashboard_command(self):
         parser_dashboard = self._subparsers.add_parser('dashboard')
 
         parser_dashboard.add_argument(
-            '-w', '--with-wsgi', action='store_true', default=False
+            '-w',
+            '--with-wsgi',
+            action='store_true',
+            default=False,
+            help='run dashboard server with WSGI (in deployment mode)',
         )
 
         data_provider_arg_grp = parser_dashboard.add_mutually_exclusive_group(
             required=True
         )
         data_provider_arg_grp.add_argument(
-            '-m', '--mongodb', metavar='CONFIG_PATH', action='store', type=Path
+            '-m',
+            '--mongodb',
+            metavar='CONFIG_PATH',
+            action='store',
+            type=Path,
+            help='choose MongoDb as the data provider with given config file',
         )
