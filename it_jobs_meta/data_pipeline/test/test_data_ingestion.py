@@ -1,4 +1,4 @@
-import datetime
+import datetime as dt
 import json
 
 from it_jobs_meta.data_pipeline.data_ingestion import (
@@ -23,7 +23,7 @@ class TestNoFluffJobsPostingsDataSource:
         assert source_name == NoFluffJobsPostingsDataSource.SOURCE_NAME
 
     def test_returns_correct_metadata_datetime(self, mocker):
-        expected = datetime.datetime(2021, 12, 1, 8, 30, 5)
+        expected = dt.datetime(2021, 12, 1, 8, 30, 5)
         datetime_mock = mocker.patch('datetime.datetime')
         datetime_mock.now.return_value = expected
 
@@ -34,8 +34,8 @@ class TestNoFluffJobsPostingsDataSource:
         assert obtained_datetime == expected
 
     def test_make_data_key_returns_correct_key(self, mocker):
-        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5).replace(tzinfo=None)
-        expected = '1638343805_nofluffjobs'
+        datetime_ = dt.datetime(2021, 12, 1, 8, 30, 5, tzinfo=dt.timezone.utc)
+        expected = '1638347405_nofluffjobs'
         datetime_mock = mocker.patch('datetime.datetime')
         datetime_mock.now.return_value = datetime_
 
@@ -58,7 +58,7 @@ class TestNoFluffJobsPostingsDataSource:
         assert 'raw_data' in result_back_to_json_dict.keys()
 
     def test_make_json_string_returns_correct_metadata(self, mocker):
-        datetime_ = datetime.datetime(2021, 12, 1, 8, 30, 5)
+        datetime_ = dt.datetime(2021, 12, 1, 8, 30, 5)
         expected_json_metadata_str = {
             'source_name': 'nofluffjobs',
             'obtained_datetime': '2021-12-01 08:30:05',

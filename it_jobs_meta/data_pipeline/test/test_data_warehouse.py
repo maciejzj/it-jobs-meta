@@ -8,7 +8,6 @@ from it_jobs_meta.data_pipeline.data_warehouse import (
     PandasEtlTransformationEngine,
 )
 
-
 POSTINGS_LIST_MOCK = [
     {
         'id': 'ELGZSKOL',

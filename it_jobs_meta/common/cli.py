@@ -92,7 +92,7 @@ class CliArgumentParser:
             metavar='CRON_EXPRESSION',
             action='store',
             type=str,
-            help='schedule pipeline to run periodically with a cron expression', #  noqa: E501
+            help='schedule pipeline to run periodically with a cron expression',  #  noqa: E501
         )
         data_lake_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
