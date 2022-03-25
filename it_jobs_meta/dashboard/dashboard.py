@@ -1,3 +1,5 @@
+"""Dashboard server for job postings data visualization."""
+
 import logging
 from datetime import timedelta
 from pathlib import Path
@@ -14,7 +16,6 @@ from it_jobs_meta.dashboard.dashboard_components import GraphRegistry
 from it_jobs_meta.dashboard.data_provision import (
     DashboardDataProviderFactory,
     DashboardProviderImpl,
-    GatheredData,
 )
 from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
 
@@ -66,11 +67,11 @@ class DashboardApp:
     def render_layout(self) -> DashComponent:
         logging.info('Rendering dashboard')
         logging.info('Attempting to retrieve data')
-        data = self._data_provider_factory.make().gather_data()
+        metadata_df, data_df = self._data_provider_factory.make().gather_data()
         logging.info('Data retrieval succeeded')
 
         logging.info('Making layout')
-        dynamic_content = self.make_dynamic_content(data)
+        dynamic_content = self.make_dynamic_content(metadata_df, data_df)
         layout = make_layout(dynamic_content)
         logging.info('Making layout succeeded')
         logging.info('Rendering dashboard succeeded')
@@ -98,17 +99,18 @@ class DashboardApp:
             raise
 
     @staticmethod
-    def make_dynamic_content(data: GatheredData) -> DynamicContent:
-        obtained_datetime = pd.to_datetime(
-            data.metadata['obtained_datetime'][0]
-        )
-        graphs = GraphRegistry.make(data.postings)
+    def make_dynamic_content(
+        metadata_df: pd.DataFrame, data_df: pd.DataFrame
+    ) -> DynamicContent:
+        obtained_datetime = pd.to_datetime(metadata_df['obtained_datetime'][0])
+        graphs = GraphRegistry.make(data_df)
         return DynamicContent(
             obtained_datetime=obtained_datetime, graphs=graphs
         )
 
 
 def main():
+    """Run the demo dashboard with short cache timout (for development)."""
     setup_logging()
     data_warehouse_config_path = Path('config/mongodb_config.yml')
     data_provider_factory = DashboardDataProviderFactory(

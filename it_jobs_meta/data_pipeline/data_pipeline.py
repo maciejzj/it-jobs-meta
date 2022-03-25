@@ -1,3 +1,5 @@
+"""Full data pipeline for job postings data from No Fluff Jobs."""
+
 import datetime as dt
 import logging
 from pathlib import Path
@@ -19,6 +21,11 @@ from it_jobs_meta.data_pipeline.data_etl import (
 
 
 class DataPipeline:
+    """Full data pipeline for job postings data from No Fluff Jobs.
+
+    Includes data scraping, ingestion, data lake storage, and running ETL job.
+    """
+
     def __init__(
         self,
         data_lake_factory: DataLakeFactory,
@@ -78,6 +85,11 @@ class DataPipeline:
 
 
 def main():
+    """Demo main function for ad-hock tests.
+
+    Reads postings data from test JSON file and feeds it to the ETL pipeline.
+    """
+
     test_json_file_path = Path(
         'it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json'
     )

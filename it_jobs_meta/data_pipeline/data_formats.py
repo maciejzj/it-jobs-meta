@@ -18,13 +18,13 @@ class PostingsData(ABC):
     @classmethod
     @abstractmethod
     def from_json_str(cls, json_str) -> 'PostingsData':
-        """Make the data structure from json string.
+        """Make the data structure from JSON string.
 
-        The input json should have keys:
+        The input JSON should have keys:
             'metadata': Json dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
-             'raw_data': Raw data in format of a json string.
+             'raw_data': Raw data in format of a JSON string.
         """
 
     @property
@@ -43,13 +43,13 @@ class PostingsData(ABC):
 
     @abstractmethod
     def make_json_str_from_data(self) -> str:
-        """Get the data in form of json string.
+        """Get the data in form of JSON string.
 
-        The returned json should have keys:
-            'metadata': Json dump of 'PostingsMetadata' with keys:
+        The returned JSON should have keys:
+            'metadata': JSON dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp in format 'YYYY-MM-DD HH:MM:SS'.
-            'data': Raw data in format of a json string.
+            'raw_data': Raw data in format of a JSON string.
         """
 
 
@@ -61,13 +61,13 @@ class NoFluffJObsPostingsData(PostingsData):
 
     @classmethod
     def from_json_str(cls, json_str: str) -> 'NoFluffJObsPostingsData':
-        """Make the data structure from json string.
+        """Make the data structure from JSON string.
 
-        The input json should have keys:
-            'metadata': Json dump of 'PostingsMetadata' with keys:
+        The input JSON should have keys:
+            'metadata': JSON dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
-            'raw_data': Raw data in format of a json string.
+            'raw_data': Raw data in format of a JSON string.
         """
         data_dict = json.loads(json_str)
         source_name = data_dict['metadata']['source_name']
@@ -97,13 +97,13 @@ class NoFluffJObsPostingsData(PostingsData):
         return f'{timestamp}_{source_name}'
 
     def make_json_str_from_data(self) -> str:
-        """Get the data in form of json string.
+        """Get the data in form of JSON string.
 
-        The returned json should have keys:
-            'metadata': Json dump of 'PostingsMetadata' with keys:
+        The returned JSON should have keys:
+            'metadata': JSON dump of 'PostingsMetadata' with keys:
                 'source_name': Name of the data source.
                 'obtained_datetime': Timestamp with fmt 'YYYY-MM-DD HH:MM:SS'.
-            'raw_data': Raw scraped data in format of a json string. For
+            'raw_data': Raw scraped data in format of a JSON string. For
                 No Fluff Jobs scraped data the structure is assumed to be:
                 'postings': List of postings.
                 'totalCount': The length of the list of postings.

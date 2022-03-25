@@ -39,7 +39,7 @@ end
 ```
 
 Notice that the terms *data lake* and *data warehouse* are used in a rather
-loose way in the following descriptions.
+loose/naive way in the following descriptions.
 
 ## Setup
 

@@ -1,3 +1,5 @@
+"""Utility tools shared across the application."""
+
 import logging
 import sys
 from pathlib import Path
@@ -7,6 +9,10 @@ import yaml
 
 
 def setup_logging(*args: Path):
+    """Enable logging to stdout and the given files.
+
+    :param *args: Paths to log output files.
+    """
     log_file_handlers = []
     for log_path in args:
         log_path.parent.mkdir(exist_ok=True, parents=True)

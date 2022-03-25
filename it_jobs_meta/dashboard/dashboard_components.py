@@ -1,3 +1,5 @@
+"""Data dashboard components and graphs."""
+
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from typing import Any
@@ -22,7 +24,14 @@ def get_rows_with_n_most_frequent_vals_in_col(
 
 
 def sort_by_seniority(df: pd.DataFrame) -> pd.DataFrame:
-    SENIORITY_ORDER = {'Trainee': 0, 'Junior': 1, 'Mid': 2, 'Senior': 3}
+    """Sorts rows according to the seniority---least to most experienced."""
+    SENIORITY_ORDER = {
+        'Trainee': 0,
+        'Junior': 1,
+        'Mid': 2,
+        'Senior': 3,
+        'Expert': 4,
+    }
 
     sorted = df.sort_values('seniority', key=lambda x: x.map(SENIORITY_ORDER))
     return sorted
@@ -65,18 +74,22 @@ class GraphFigure(ABC):
     @classmethod
     @abstractmethod
     def make_fig(cls, postings_df: pd.DataFrame) -> go.Figure:
-        pass
+        """Make the figure using the given data frame."""
 
 
 class GraphRegistry:
+    """Registry for automatic gathering and creation of graph figures."""
+
     _graph_makers: dict[Graph, GraphFigure] = {}
 
     @classmethod
     def register(cls, key: Graph):
+        """Add given graph implementation to the registry."""
         return lambda graph_figure: cls._register_inner(key, graph_figure)
 
     @classmethod
     def make(cls, postings_df: pd.DataFrame) -> dict[Graph, dcc.Graph]:
+        """Make all registered graphs using the given data and get them."""
         graphs: dict[Graph, go.Figure] = {}
         for graph_key in cls._graph_makers:
             graphs[graph_key] = dcc.Graph(

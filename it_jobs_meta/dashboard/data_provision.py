@@ -1,5 +1,6 @@
+"""Data provision and data source for the data dashboard."""
+
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 from enum import Enum, auto
 from pathlib import Path
 
@@ -9,16 +10,14 @@ import pymongo
 from it_jobs_meta.common.utils import load_yaml_as_dict
 
 
-@dataclass
-class GatheredData:
-    metadata: pd.DataFrame
-    postings: pd.DataFrame
-
-
 class DashboardDataProvider(ABC):
     @abstractmethod
-    def gather_data(self) -> GatheredData:
-        pass
+    def gather_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Gather data for the dashboard.
+
+        :return: Tuple with metadata and data dataframes as (metadata_df,
+            data_df)
+        """
 
 
 class MongodbDashboardDataProvider(DashboardDataProvider):
@@ -41,14 +40,19 @@ class MongodbDashboardDataProvider(DashboardDataProvider):
     ) -> 'MongodbDashboardDataProvider':
         return cls(**load_yaml_as_dict(config_file_path))
 
-    def gather_data(self) -> GatheredData:
+    def gather_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Gather data for the dashboard.
+
+        :return: Tuple with metadata and data dataframes as (metadata_df,
+            data_df)
+        """
         metadata_df = pd.json_normalize(self._db['metadata'].find())
         postings_df = pd.json_normalize(self._db['postings'].find())
         if metadata_df.empty or postings_df.empty:
             raise RuntimeError(
                 'Data gather for the dashboard resulted in empty datasets'
             )
-        return GatheredData(metadata=metadata_df, postings=postings_df)
+        return metadata_df, postings_df
 
 
 class DashboardProviderImpl(Enum):

@@ -1,3 +1,5 @@
+"""Data validation schemas for postings data."""
+
 from dataclasses import dataclass
 from datetime import datetime
 

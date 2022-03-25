@@ -1,3 +1,5 @@
+"""Run the data pipeline or dashboard using CLI options."""
+
 from it_jobs_meta.common.cli import CliArgumentParser
 from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.dashboard.dashboard import (

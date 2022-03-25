@@ -1,3 +1,5 @@
+"""Command line parser for the it-jobs-meta application."""
+
 import argparse
 from pathlib import Path
 from typing import Any
@@ -8,6 +10,8 @@ from it_jobs_meta.data_pipeline.data_etl import EtlLoaderImpl
 
 
 class CliArgumentParser:
+    """Command line parser for the it-jobs-meta application."""
+
     PROG = 'it-jobs-meta'
     DESCRIPTION = (
         'Data pipeline and meta-analysis dashboard for IT job postings'
@@ -39,6 +43,11 @@ class CliArgumentParser:
         return self._args
 
     def extract_data_lake(self) -> tuple[DataLakeImpl, Path]:
+        """Extract data lake setup from the arguments.
+
+        :return: Tuple with the selected data lake implementation type and
+            the config path.
+        """
         match self.args:
             case {'redis': Path(), 's3_bucket': None}:
                 return DataLakeImpl.REDIS, self.args['redis']
@@ -51,6 +60,11 @@ class CliArgumentParser:
                 )
 
     def extract_etl_loader(self) -> tuple[EtlLoaderImpl, Path]:
+        """Get the ETL loader setup from the arguments.
+
+        :return: Tuple with the selected etl loader implementation type and
+            the config path.
+        """
         match self.args:
             case {'mongodb': Path(), 'sql': None}:
                 return EtlLoaderImpl.MONGODB, self.args['mongodb']
@@ -63,6 +77,11 @@ class CliArgumentParser:
                 )
 
     def extract_data_provider(self) -> tuple[DashboardProviderImpl, Path]:
+        """Get the dashboard data provider setup from the arguments.
+
+        :return: Tuple with the selected data provider implementation type and
+            the config path.
+        """
         match self.args:
             case {'mongodb': Path()}:
                 return DashboardProviderImpl.MONGODB, self.args['mongodb']

@@ -1,3 +1,5 @@
+"""Data Extraction, Transformations, and Loading for the job postings data."""
+
 import dataclasses
 import re
 from abc import ABC, abstractmethod
@@ -14,17 +16,39 @@ from it_jobs_meta.data_pipeline.data_formats import NoFluffJObsPostingsData
 from it_jobs_meta.data_pipeline.data_validation import Schemas
 from it_jobs_meta.data_pipeline.geolocator import Geolocator
 
-DataType = TypeVar('DataType')
+# Data type used internally by the data transformation pipeline.
+ProcessDataType = TypeVar('ProcessDataType')
+# Data type accepted as the input to the data pipeline by the data extraction
+# engine.
 PipelineInputType = TypeVar('PipelineInputType')
+# E.g. Data pipeline input data type is JSON string, and internal processing
+# data type is Pandas Data Frame.
 
 
-class EtlExtractionEngine(Generic[PipelineInputType, DataType], ABC):
+class EtlExtractionEngine(Generic[PipelineInputType, ProcessDataType], ABC):
+    """Extraction engine for the ETL pipeline.
+
+    Should handle inputs in the PipelineInputType and provide the pipeline with
+    the PipelineInputType data.
+    """
+
     @abstractmethod
-    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
-        pass
+    def extract(
+        self, input_: PipelineInputType
+    ) -> tuple[ProcessDataType, ProcessDataType]:
+        """Extract data from the input and get it the pipeline compatible form.
+
+        :return: Tuple with metadata and data dataframes (metadata, data).
+        """
 
 
-class EtlTransformationEngine(Generic[DataType], ABC):
+class EtlTransformationEngine(Generic[ProcessDataType], ABC):
+    """ETL operations actions template on the given processing data type.
+
+    Includes constants with values to drop, replace, or transform, and
+    interfaces for methods necessary to build the processing pipeline.
+    """
+
     COLS_TO_DROP = [
         'renewed',
         'logo',
@@ -43,10 +67,13 @@ class EtlTransformationEngine(Generic[DataType], ABC):
         'react': 'javascript',
     }
 
+    # Title case text is like "Sample Text".
     COLS_TO_TITLE_CASE = ['category']
 
+    # Capitalized text is like: "Sample text".
     COLS_TO_CAPITALIZE = ['technology', 'contract_type']
 
+    # Names that require specific mappings instead of normal capitalizations.
     CAPITALIZE_SPECIAL_NAMES = {
         '.net': '.Net',
         'aws': 'AWS',
@@ -57,60 +84,91 @@ class EtlTransformationEngine(Generic[DataType], ABC):
         'b2b': 'B2B',
     }
 
+    # Limit locations to the given countries.
+    COUNTRY_FILTERS = ['Polska']
+
     @abstractmethod
-    def drop_unwanted(self, data: DataType) -> DataType:
+    def drop_unwanted(self, data: ProcessDataType) -> ProcessDataType:
+        """Drop unwanted columns in the COLS_TO_DROP."""
+
+    @abstractmethod
+    def drop_duplicates(self, data: ProcessDataType) -> ProcessDataType:
+        """Drop duplicated rows in the dataset."""
+
+    @abstractmethod
+    def replace_values(self, data: ProcessDataType) -> ProcessDataType:
+        """Replace values specified in COLS_TO_DROP."""
+
+    @abstractmethod
+    def to_title_case(self, data: ProcessDataType) -> ProcessDataType:
+        """Transform columns in COLS_TO_TITLE_CASE to title case.
+
+        Title case text is like "Sample Text".
+        """
+
+    @abstractmethod
+    def to_capitalized(self, data: ProcessDataType) -> ProcessDataType:
+        """Capitalize columns in COLS_TO_CAPITALIZE.
+
+        Capitalized text is like "Sample text".
+        """
+
+    @abstractmethod
+    def extract_remote(self, data: ProcessDataType) -> ProcessDataType:
+        """Extract remote work option and place it in the "remote" column."""
+
+    @abstractmethod
+    def extract_locations(self, data: ProcessDataType) -> ProcessDataType:
+        """Extract work location as cities and place them in the "city" column.
+
+        Should ensure consistent naming and coordinates for given locations.
+        The values in the "city" column should be gathered in a tuple of
+        (city_name, latitude, longitude). The results should be limited to the
+        countries in COUNTRY_FILTERS.
+        """
         pass
 
     @abstractmethod
-    def drop_duplicates(self, data: DataType) -> DataType:
+    def extract_contract_type(self, data: ProcessDataType) -> ProcessDataType:
+        """Extract contract type and place it in the "contract_type" column."""
+
+    @abstractmethod
+    def extract_salaries(self, data: ProcessDataType) -> ProcessDataType:
+        """Extract salaries to columns: "salary_max", "min", "salary_mean"."""
         pass
 
     @abstractmethod
-    def replace_values(self, data: DataType) -> DataType:
+    def unify_missing_values(self, data: ProcessDataType) -> ProcessDataType:
+        """Unify missing values (NaNs, empty, etc.) into Nones."""
         pass
+
+
+class EtlLoadingEngine(Generic[ProcessDataType], ABC):
+    """Loader for placing processing results in databases."""
 
     @abstractmethod
-    def to_title_case(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def to_capitalized(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def extract_remote(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def extract_locations(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def extract_contract_type(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def extract_salaries(self, data: DataType) -> DataType:
-        pass
-
-    @abstractmethod
-    def unify_missing_values(self, data: DataType) -> DataType:
-        pass
+    def load_tables_to_warehouse(
+        self, metadata: ProcessDataType, data: ProcessDataType
+    ):
+        """Load processed data into a database."""
 
 
-class EtlLoadingEngine(Generic[DataType], ABC):
-    @abstractmethod
-    def load_tables_to_warehouse(self, metadata: DataType, data: DataType):
-        pass
+class EtlPipeline(Generic[ProcessDataType, PipelineInputType]):
+    """ETL pipeline coordinating extraction, transformations, and loading."""
 
-
-class EtlPipeline(Generic[DataType, PipelineInputType]):
     def __init__(
         self,
-        extraction_engine: EtlExtractionEngine[PipelineInputType, DataType],
-        transformation_engine: EtlTransformationEngine[DataType],
-        loading_engine: EtlLoadingEngine[DataType],
+        extraction_engine: EtlExtractionEngine[
+            PipelineInputType, ProcessDataType
+        ],
+        transformation_engine: EtlTransformationEngine[ProcessDataType],
+        loading_engine: EtlLoadingEngine[ProcessDataType],
     ):
+        """Data pipeline runner for ETL jobs.
+
+        Notice that the extraction, transformation, and loading engines must
+        work on the same ProcessDataType type to build a proper pipeline.
+        """
 
         self._extraction_engine = extraction_engine
         self._transformation_engine = transformation_engine
@@ -121,10 +179,12 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
         data = self.transform(data)
         self.load(metadata, data)
 
-    def extract(self, input_: PipelineInputType) -> tuple[DataType, DataType]:
+    def extract(
+        self, input_: PipelineInputType
+    ) -> tuple[ProcessDataType, ProcessDataType]:
         return self._extraction_engine.extract(input_)
 
-    def transform(self, data: DataType) -> DataType:
+    def transform(self, data: ProcessDataType) -> ProcessDataType:
         data = self._transformation_engine.drop_unwanted(data)
         data = self._transformation_engine.drop_duplicates(data)
         data = self._transformation_engine.extract_remote(data)
@@ -137,7 +197,7 @@ class EtlPipeline(Generic[DataType, PipelineInputType]):
         data = self._transformation_engine.unify_missing_values(data)
         return data
 
-    def load(self, metadata: DataType, data: DataType):
+    def load(self, metadata: ProcessDataType, data: ProcessDataType):
         self._loading_engine.load_tables_to_warehouse(metadata, data)
 
 
@@ -146,6 +206,14 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
         pass
 
     def extract(self, input_: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+        """Extract job postings data from JSON str to dataframes.
+
+        The input JSON should have keys:
+            'metadata': Json dump of 'PostingsMetadata' with keys:
+                'source_name': Name of the data source.
+                'obtained_datetime': Timestamp in format 'YYYY-MM-DD HH:MM:SS'.
+            'raw_data': Raw data in format of a JSON string.
+        """
         data = NoFluffJObsPostingsData.from_json_str(input_)
         self.validate_nofluffjobs_data(data)
         metadata_df = pd.DataFrame(
@@ -176,7 +244,9 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
 
 class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def __init__(self):
-        self._geolocator = Geolocator(country_filter=('Polska'))
+        self._geolocator = Geolocator(
+            country_filter=EtlTransformationEngine.COUNTRY_FILTERS
+        )
 
     def drop_unwanted(self, data: pd.DataFrame) -> pd.DataFrame:
         return data.drop(columns=EtlTransformationEngine.COLS_TO_DROP)

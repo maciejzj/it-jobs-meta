@@ -15,11 +15,11 @@ class DataLake(ABC):
 
     @abstractmethod
     def set_data(self, key: str, data: str):
-        """Store data under key. Data is assumed to be a json string."""
+        """Store data under key. Data is assumed to be a JSON string."""
 
     @abstractmethod
     def get_data(self, key: str) -> str:
-        """Get data stored under key. Data is assumed ot be a json string."""
+        """Get data stored under key. Data is assumed ot be a JSON string."""
 
 
 class RedisDataLake(DataLake):
@@ -38,11 +38,9 @@ class RedisDataLake(DataLake):
         return cls(**load_yaml_as_dict(config_path))
 
     def set_data(self, key: str, data: str):
-        """Store data under key. Data is assumed to be json string."""
         self._db.set(key, data)
 
     def get_data(self, key: str) -> str:
-        """Get data stored under key. Data is assumed ot be json string."""
         data = self._db.get(key)
         if data is None:
             raise KeyError(f'No data stored in db under key: {key}')
@@ -50,6 +48,8 @@ class RedisDataLake(DataLake):
 
 
 class S3DataLake(DataLake):
+    """AWS S3 data lake key-value object storage."""
+
     def __init__(self, bucket_name: str):
         self._s3 = boto3.resource('s3')
         self._bucket = self._s3.Bucket(bucket_name)
