@@ -110,12 +110,12 @@ class DashboardApp:
 
 def main():
     setup_logging()
-    data_warehouse_config_path = Path('config/db_config_mongo.yaml')
-    data_warehouse_factory = DashboardDataProviderFactory(
+    data_warehouse_config_path = Path('config/mongodb_config.yml')
+    data_provider_factory = DashboardDataProviderFactory(
         DashboardProviderImpl.MONGODB, data_warehouse_config_path
     )
     app = DashboardApp(
-        data_warehouse_factory, cache_timeout=timedelta(seconds=30)
+        data_provider_factory, cache_timeout=timedelta(seconds=30)
     )
     app.run()
 

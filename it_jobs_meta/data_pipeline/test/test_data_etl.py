@@ -3,7 +3,7 @@ import math
 import pandas as pd
 import pytest
 
-from it_jobs_meta.data_pipeline.data_warehouse import (
+from it_jobs_meta.data_pipeline.data_etl import (
     EtlTransformationEngine,
     PandasEtlTransformationEngine,
 )

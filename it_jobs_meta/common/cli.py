@@ -4,7 +4,7 @@ from typing import Any
 
 from it_jobs_meta.dashboard.dashboard import DashboardProviderImpl
 from it_jobs_meta.data_pipeline.data_lake import DataLakeImpl
-from it_jobs_meta.data_pipeline.data_warehouse import EtlLoaderImpl
+from it_jobs_meta.data_pipeline.data_etl import EtlLoaderImpl
 
 
 class CliArgumentParser:
@@ -50,7 +50,7 @@ class CliArgumentParser:
                     ' lake configuration'
                 )
 
-    def extract_data_warehouse(self) -> tuple[EtlLoaderImpl, Path]:
+    def extract_etl_loader(self) -> tuple[EtlLoaderImpl, Path]:
         match self.args:
             case {'mongodb': Path(), 'sql': None}:
                 return EtlLoaderImpl.MONGODB, self.args['mongodb']
@@ -92,7 +92,7 @@ class CliArgumentParser:
             metavar='CRON_EXPRESSION',
             action='store',
             type=str,
-            help='schedule pipeline to run periodically with a cron expression',  #  noqa: E501
+            help='schedule pipeline to run periodically with a cron expression',  # noqa: E501
         )
         data_lake_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
@@ -103,7 +103,7 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
-            help='choose Redis as the data lake with given config file',
+            help='choose Redis as the data lake with the given config file',
         )
         data_lake_arg_grp.add_argument(
             '-b',
@@ -111,7 +111,7 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
-            help='choose S3 Bucket as the data lake with given config file',
+            help='choose S3 Bucket as the data lake with the given config file',  # noqa: E501
         )
 
         etl_loader_arg_grp = parser_pipeline.add_mutually_exclusive_group(
@@ -123,7 +123,7 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
-            help='choose MongoDB as the data warehouse with given config file',
+            help='choose MongoDB as the data warehouse with the given config file',  # noqa: E501,
         )
         etl_loader_arg_grp.add_argument(
             '-s',
@@ -131,7 +131,7 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
-            help='choose MariaDB as the data warehouse with given config file',
+            help='choose MariaDB as the data warehouse with the given config file',  # noqa: E501
         )
 
     def _build_dashboard_command(self):
@@ -154,5 +154,5 @@ class CliArgumentParser:
             metavar='CONFIG_PATH',
             action='store',
             type=Path,
-            help='choose MongoDb as the data provider with given config file',
+            help='choose MongoDb as the data provider with the given config file',  # noqa: E501
         )

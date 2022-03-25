@@ -9,7 +9,7 @@ from it_jobs_meta.data_pipeline.data_ingestion import (
     NoFluffJobsPostingsDataSource,
 )
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
-from it_jobs_meta.data_pipeline.data_warehouse import (
+from it_jobs_meta.data_pipeline.data_etl import (
     EtlLoaderFactory,
     EtlPipeline,
     PandasEtlExtractionFromJsonStr,
@@ -81,7 +81,7 @@ def main():
     test_json_file_path = Path(
         'it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json'
     )
-    mongodb_config_path = Path('config/mongodb_config.yaml')
+    mongodb_config_path = Path('config/mongodb_config.yml')
     with open(test_json_file_path, 'r', encoding='utf-8') as json_data_file:
         data_as_json = json_data_file.read()
     etl_pipeline = EtlPipeline(

@@ -6,7 +6,7 @@ from it_jobs_meta.dashboard.dashboard import (
 )
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 from it_jobs_meta.data_pipeline.data_pipeline import DataPipeline
-from it_jobs_meta.data_pipeline.data_warehouse import EtlLoaderFactory
+from it_jobs_meta.data_pipeline.data_etl import EtlLoaderFactory
 
 
 def main():
@@ -19,17 +19,17 @@ def main():
             (
                 warehouse_type,
                 warehouse_cfg_path,
-            ) = parser.extract_data_warehouse()
+            ) = parser.extract_etl_loader()
             data_lake_factory = DataLakeFactory(
                 data_lake_type, data_lake_cfg_path
             )
-            data_warehouse_factory = EtlLoaderFactory(
+            etl_loader_factory = EtlLoaderFactory(
                 warehouse_type, warehouse_cfg_path
             )
 
             data_pipeline = DataPipeline(
                 data_lake_factory,
-                data_warehouse_factory,
+                etl_loader_factory,
             )
 
             if parser.args['schedule'] is not None:
@@ -39,10 +39,10 @@ def main():
 
         case 'dashboard':
             provider_type, provider_cfg_path = parser.extract_data_provider()
-            data_warehouse_factory = DashboardDataProviderFactory(
+            etl_loader_factory = DashboardDataProviderFactory(
                 provider_type, provider_cfg_path
             )
-            app = DashboardApp(data_warehouse_factory)
+            app = DashboardApp(etl_loader_factory)
             app.run(parser.args['with_wsgi'])
 
 

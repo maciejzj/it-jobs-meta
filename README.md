@@ -38,6 +38,9 @@ end
 
 ```
 
+Notice that the terms *data lake* and *data warehouse* are used in a rather
+loose way in the following descriptions.
+
 ## Setup
 
 At least Python version 3.10 is required to run this application. The setup
@@ -59,7 +62,7 @@ All runtime dependencies will be installed alongside the application. From now,
 you should be able to call it with `it-jobs-meta` (if it doesn't work double
 check pip installation path and `PATH` environmental variable).
 
-The application can also be used without installation, in an development setup.
+The application can also be used without installation, in a development setup.
 Refer to further sections of this file for advice on that.
 
 ## Usage
@@ -85,7 +88,7 @@ options:
 > to `/dev/null` (e.g. `it-jobs-meta -l /dev/null ...`)
 
 The `pipeline` subcommand is used to scrap the job postings data from the web,
-store it in the *data lake* in a raw form, and in *data warehouse* in a
+store it in the *data lake* in a raw form, and in the *data warehouse* in a
 processed form (ready to be used by the dashboard later).
 
 ```
@@ -99,13 +102,13 @@ options:
   -c CRON_EXPRESSION, --schedule CRON_EXPRESSION
                         schedule pipeline to run periodically with a cron expression
   -r CONFIG_PATH, --redis CONFIG_PATH
-                        choose Redis as the data lake with given config file
+                        choose Redis as the data lake with the given config file
   -b CONFIG_PATH, --s3-bucket CONFIG_PATH
                         choose S3 Bucket as the data lake with given config file
   -m CONFIG_PATH, --mongodb CONFIG_PATH
-                        choose MongoDB as the data warehouse with given config file
+                        choose MongoDB as the data warehouse with the given config file
   -s CONFIG_PATH, --sql CONFIG_PATH
-                        choose MariaDB as the data warehouse with given config file
+                        choose MariaDB as the data warehouse with the given config file
 ```
 
 The `dashboard` subcommand runs the dashboard server; use it to visualize the
@@ -119,7 +122,7 @@ options:
   -h, --help            show this help message and exit
   -w, --with-wsgi       run dashboard server with WSGI (in deployment mode)
   -m CONFIG_PATH, --mongodb CONFIG_PATH
-                        choose MongoDb as the data provider with given config file
+                        choose MongoDb as the data provider with the given config file
 ```
 
 There are several backend implementations for the data lake and the data
@@ -130,8 +133,8 @@ provider.
 
 ## Configuration files
 
-There are several options that require passing a path to yaml config path as an
-argument. The reference config files are stored in the `config` directory.
+There are several options that require passing a path to a `yaml` config path
+as an argument. The reference config files are stored in the `config` directory.
 
 > ❗️ **Warning:** The config files match the services configuration in the
 > `docker-compose.yml` file. If you wish to run this app publicly change the
@@ -139,16 +142,17 @@ argument. The reference config files are stored in the `config` directory.
 
 ## Development
 
-You can run the program without installing it with package manager. Install the
-prerequisites with `pip install -r requirements.txt` (using virtual environment
-is recommended). To install extra development tools compatible with the project
-(test tools, type checker, etc.) run: `pip install -r requirements-dev.txt`.
+You can run the program without installing it with a package manager. Install
+the prerequisites with `pip install -r requirements.txt` (using virtual
+environment is recommended). To install extra development tools compatible with
+the project (test tools, type checker, etc.) run: `pip install -r
+requirements-dev.txt`.
 
 The server-side services for development can be set up with Docker Compose.
-Install docker, docker-compose and run `docker-compose up` in the project
-directory to setup the services.
+Install docker, docker-compose, and run `docker-compose up` in the project
+directory to set up the services.
 
-Application can be run with `python -m it_jobs_meta`. Since running the data
+The application can be run with `python -m it_jobs_meta`. Since running the data
 pipeline is going to download data from the web, it is not recommended to
 run it as a whole during the development. Some modules include demo versions of
 parts of the application, resort to using them and unit tests during the
