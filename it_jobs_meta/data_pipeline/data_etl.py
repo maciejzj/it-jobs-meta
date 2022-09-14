@@ -74,6 +74,7 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
     COLS_TO_CAPITALIZE = ['technology', 'contract_type']
 
     # Names that require specific mappings instead of normal capitalizations.
+    # Input strings should be transformed to lower before applying these cases.
     CAPITALIZE_SPECIAL_NAMES = {
         '.net': '.Net',
         'aws': 'AWS',
@@ -266,10 +267,13 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
 
     def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
         specials = EtlTransformationEngine.CAPITALIZE_SPECIAL_NAMES
+
+        def transform_func(s: str) -> str:
+            s = s.lower()
+            return specials[s] if s in specials else s.capitalize()
+
         for col in EtlTransformationEngine.COLS_TO_CAPITALIZE:
-            data[col] = data[col][data[col].notna()].transform(
-                lambda s: specials[s] if s in specials else s.capitalize()
-            )
+            data[col] = data[col][data[col].notna()].transform(transform_func)
         return data
 
     def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:

@@ -60,6 +60,7 @@ class DashboardApp:
                 self.app.server,
                 config={
                     'CACHE_TYPE': 'SimpleCache',
+                    'CACHE_THRESHOLD': 2,
                 },
             )
         return self._cache
