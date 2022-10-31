@@ -289,7 +289,7 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         specials = EtlTransformationEngine.CAPITALIZE_SPECIAL_NAMES
         for col in EtlTransformationEngine.COLS_TO_CAPITALIZE:
             data[col] = data[col][data[col].notna()].transform(
-                 lambda s: specials[s] if s in specials else s.capitalize()
+                lambda s: specials[s] if s in specials else s.capitalize()
             )
         return data
 
