@@ -8,7 +8,7 @@ from typing import Any
 import yaml
 
 
-def setup_logging(*args: Path):
+def setup_logging(*args: Path, log_level: int = logging.INFO):
     """Enable logging to stdout and the given files.
 
     :param *args: Paths to log output files.
@@ -19,7 +19,7 @@ def setup_logging(*args: Path):
         log_file_handlers.append(logging.FileHandler(log_path))
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=log_level,
         format='%(asctime)s [%(levelname)s] %(message)s',
         handlers=[
             *log_file_handlers,

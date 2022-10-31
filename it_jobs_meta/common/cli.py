@@ -1,12 +1,13 @@
 """Command line parser for the it-jobs-meta application."""
 
 import argparse
+import logging
 from pathlib import Path
 from typing import Any
 
 from it_jobs_meta.dashboard.dashboard import DashboardProviderImpl
-from it_jobs_meta.data_pipeline.data_lake import DataLakeImpl
 from it_jobs_meta.data_pipeline.data_etl import EtlLoaderImpl
+from it_jobs_meta.data_pipeline.data_lake import DataLakeImpl
 
 
 class CliArgumentParser:
@@ -21,6 +22,13 @@ class CliArgumentParser:
         'data lake, load processed data to the data warehouse.'
     )
     DASHBOARD_DESCRIPTION = 'Run data visualization dashboard server.'
+    LOG_LEVEL_OPTIONS = {
+        'debug': logging.DEBUG,
+        'info': logging.INFO,
+        'warning': logging.WARNING,
+        'critical': logging.CRITICAL,
+        'error': logging.ERROR,
+    }
 
     def __init__(self):
         self._args: dict[str, Any] | None = None
@@ -92,6 +100,14 @@ class CliArgumentParser:
                 )
 
     def _build_main_command(self):
+        self._parser.add_argument(
+            '-v',
+            '--log-level',
+            default='info',
+            type=str,
+            choices=self.LOG_LEVEL_OPTIONS.keys(),
+            help='set verbosity/log level of the program',
+        )
         self._parser.add_argument(
             '-l',
             '--log-path',
