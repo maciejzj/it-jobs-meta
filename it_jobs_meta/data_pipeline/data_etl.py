@@ -61,6 +61,14 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
         'referralBonusCurrency',
     ]
 
+    # Look at the ETL pipeline implementation to see the prefined order of the
+    # string formatting operations in columns.
+    COLS_TO_LOWER = {
+        'technology',
+        'category',
+    }
+
+    # In any column replace these strings
     VALS_TO_REPLACE = {
         'node.js': 'node',
         'angular': 'javascript',
@@ -95,6 +103,10 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
     @abstractmethod
     def drop_duplicates(self, data: ProcessDataType) -> ProcessDataType:
         """Drop duplicated rows in the dataset."""
+
+    @abstractmethod
+    def unify_to_lower(self, data: ProcessDataType) -> ProcessDataType:
+        """Unify strings to lower capitalization."""
 
     @abstractmethod
     def replace_values(self, data: ProcessDataType) -> ProcessDataType:
@@ -192,6 +204,7 @@ class EtlPipeline(Generic[ProcessDataType, PipelineInputType]):
         data = self._transformation_engine.extract_locations(data)
         data = self._transformation_engine.extract_contract_type(data)
         data = self._transformation_engine.extract_salaries(data)
+        data = self._transformation_engine.unify_to_lower(data)
         data = self._transformation_engine.replace_values(data)
         data = self._transformation_engine.to_title_case(data)
         data = self._transformation_engine.to_capitalized(data)
@@ -255,6 +268,13 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
     def drop_duplicates(self, data: pd.DataFrame) -> pd.DataFrame:
         return data[~data.index.duplicated(keep='first')]
 
+    def unify_to_lower(self, data: pd.DataFrame) -> pd.DataFrame:
+        for col in EtlTransformationEngine.COLS_TO_LOWER:
+            data[col] = data[col][data[col].notna()].transform(
+                lambda s: s.lower()
+            )
+        return data
+
     def replace_values(self, data: pd.DataFrame) -> pd.DataFrame:
         return data.replace(to_replace=EtlTransformationEngine.VALS_TO_REPLACE)
 
@@ -267,13 +287,10 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
 
     def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
         specials = EtlTransformationEngine.CAPITALIZE_SPECIAL_NAMES
-
-        def transform_func(s: str) -> str:
-            s = s.lower()
-            return specials[s] if s in specials else s.capitalize()
-
         for col in EtlTransformationEngine.COLS_TO_CAPITALIZE:
-            data[col] = data[col][data[col].notna()].transform(transform_func)
+            data[col] = data[col][data[col].notna()].transform(
+                 lambda s: specials[s] if s in specials else s.capitalize()
+            )
         return data
 
     def extract_remote(self, data: pd.DataFrame) -> pd.DataFrame:
