@@ -6,14 +6,19 @@ from it_jobs_meta.dashboard.dashboard import (
     DashboardApp,
     DashboardDataProviderFactory,
 )
+from it_jobs_meta.data_pipeline.data_etl import EtlLoaderFactory
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 from it_jobs_meta.data_pipeline.data_pipeline import DataPipeline
-from it_jobs_meta.data_pipeline.data_etl import EtlLoaderFactory
 
 
 def main():
     parser = CliArgumentParser()
-    setup_logging(parser.args['log_path'])
+    setup_logging(
+        parser.args['log_path'],
+        log_level=CliArgumentParser.LOG_LEVEL_OPTIONS[
+            parser.args['log_level']
+        ],
+    )
 
     match parser.args['command']:
         case 'pipeline':
