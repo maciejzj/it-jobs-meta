@@ -368,6 +368,12 @@ class TechnologiesViolinChart(GraphFigure):
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
         limited = sort_by_seniority(limited)
+        # Plotly has problems with creating violin plots if there are too few
+        # samples, we filter out seniority and technology paris for which
+        # there aren't enough data points to make a nice curve
+        limited = limited.groupby(['seniority', 'technology']).filter(
+            lambda x: x['technology'].count() > 3
+        )
 
         fig = px.violin(
             limited,
