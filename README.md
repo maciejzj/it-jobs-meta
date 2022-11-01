@@ -48,14 +48,17 @@ configuration is stored in the `setup.cfg` file.
 
 ### Installation
 
-To install the application system-wide use a PEP517 compatible build tool. E.g.
-this can be done with [build](https://github.com/pypa/build) inside the project
-directory:
+You can install this application with pip, either from a local repository:
 
-```sh
-pip install build
-python -m build
-pip install dist/it_jobs_meta*.whl
+```
+git clone git@github.com:maciejzj/it-jobs-meta.github
+pip install ./it_jobs_meta
+```
+
+or directly from the GitHub repository with:
+
+```
+pip install git+git@github.com:maciejzj/it-jobs-meta.git
 ```
 
 All runtime dependencies will be installed alongside the application. From now,

@@ -7,10 +7,6 @@ from time import sleep
 
 import croniter
 
-from it_jobs_meta.data_pipeline.data_ingestion import (
-    NoFluffJobsPostingsDataSource,
-)
-from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 from it_jobs_meta.data_pipeline.data_etl import (
     EtlLoaderFactory,
     EtlPipeline,
@@ -18,6 +14,10 @@ from it_jobs_meta.data_pipeline.data_etl import (
     PandasEtlMongodbLoadingEngine,
     PandasEtlTransformationEngine,
 )
+from it_jobs_meta.data_pipeline.data_ingestion import (
+    NoFluffJobsPostingsDataSource,
+)
+from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 
 
 class DataPipeline:

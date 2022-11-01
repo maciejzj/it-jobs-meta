@@ -242,7 +242,7 @@ class RemotePieChart(GraphFigure):
 @GraphRegistry.register(key=Graph.SALARIES_MAP)
 class SalariesMap(GraphFigure):
     TITLE = 'Mean salary by location (PLN)'
-    MIN_CITY_FREQ = 25
+    N_MOST_FREQ = 15
 
     @classmethod
     def make_fig(cls, postings_df) -> go.Figure:
@@ -251,6 +251,9 @@ class SalariesMap(GraphFigure):
             lambda city: pd.Series([city[0], city[1], city[2]])
         )
 
+        postings_df = get_rows_with_n_most_frequent_vals_in_col(
+            postings_df, 'city', cls.N_MOST_FREQ
+        )
         job_counts = postings_df.groupby('city')['_id'].count()
         salaries = postings_df.groupby('city')[
             ['salary_mean', 'lat', 'lon']
@@ -258,8 +261,6 @@ class SalariesMap(GraphFigure):
         cities_salaries = pd.concat(
             [job_counts.rename('job_counts'), salaries], axis=1
         )
-        more_than_min = cities_salaries['job_counts'] > cls.MIN_CITY_FREQ
-        cities_salaries = cities_salaries[more_than_min]
         cities_salaries = cities_salaries.reset_index()
 
         fig = px.scatter_geo(
@@ -367,6 +368,12 @@ class TechnologiesViolinChart(GraphFigure):
             limited['seniority'].isin(('Junior', 'Mid', 'Senior'))
         ]
         limited = sort_by_seniority(limited)
+        # Plotly has problems with creating violin plots if there are too few
+        # samples, we filter out seniority and technology paris for which
+        # there aren't enough data points to make a nice curve
+        limited = limited.groupby(['seniority', 'technology']).filter(
+            lambda x: x['technology'].count() > 3
+        )
 
         fig = px.violin(
             limited,
