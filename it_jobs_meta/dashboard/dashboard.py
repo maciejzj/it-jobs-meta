@@ -34,9 +34,10 @@ class DashboardApp:
     @property
     def app(self) -> dash.Dash:
         if self._app is None:
+            dashboard_module_path = Path(__file__).parent
             self._app = dash.Dash(
                 'it-jobs-meta-dashboard',
-                assets_folder='it_jobs_meta/dashboard/assets',
+                assets_folder=dashboard_module_path / 'assets',
                 external_stylesheets=[
                     dbc.themes.BOOTSTRAP,
                     dbc.icons.FONT_AWESOME,
