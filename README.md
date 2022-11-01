@@ -48,14 +48,14 @@ configuration is stored in the `setup.cfg` file.
 
 ### Installation
 
-You can install this application with pip, either from local repository:
+You can install this application with pip, either from a local repository:
 
 ```
 git clone git@github.com:maciejzj/it-jobs-meta.github
 pip install ./it_jobs_meta
 ```
 
-You can also install the app directly from the repository link:
+or directly from the GitHub repository with:
 
 ```
 pip install git+git@github.com:maciejzj/it-jobs-meta.git
