@@ -52,7 +52,7 @@ You can install this application with pip, either from local repository:
 
 ```
 git clone git@github.com:maciejzj/it-jobs-meta.github
-pip install it_jobs_meta
+pip install ./it_jobs_meta
 ```
 
 You can also install the app directly from the repository link:
