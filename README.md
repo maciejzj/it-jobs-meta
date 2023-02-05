@@ -74,7 +74,9 @@ Resort to the command line help to discover available options:
 
 ```
 $ it-jobs-meta -h
-usage: it-jobs-meta [-h] [-l LOG_PATH] {pipeline,dashboard} ...
+usage: it-jobs-meta [-h] [-v {debug,info,warning,critical,error}]
+                    [-l LOG_PATH]
+                    {pipeline,dashboard} ...
 
 Data pipeline and meta-analysis dashboard for IT job postings
 
@@ -83,6 +85,8 @@ positional arguments:
 
 options:
   -h, --help            show this help message and exit
+  -v {debug,info,warning,critical,error}, --log-level {debug,info,warning,critical,error}
+                        set verbosity/log level of the program (default: info)
   -l LOG_PATH, --log-path LOG_PATH
                         path to the log file (default: var/it_jobs_meta.log)
 ```
