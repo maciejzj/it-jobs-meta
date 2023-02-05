@@ -61,12 +61,11 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
         'referralBonusCurrency',
     ]
 
-    # Look at the ETL pipeline implementation to see the prefined order of the
-    # string formatting operations in columns.
-    COLS_TO_LOWER = {
+    # Look at the ETL pipeline implementation to see the predefined order of
+    # the string formatting operations in columns.
+    COLS_TO_LOWER = [
         'technology',
-        'category',
-    }
+    ]
 
     # In any column replace these strings
     VALS_TO_REPLACE = {
@@ -74,6 +73,11 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
         'angular': 'javascript',
         'react': 'javascript',
     }
+
+    # Apply transformation like 'businessAnalyst' -> 'business Analyst'
+    COLS_TO_SPLIT_ON_CAPITAL_LETTERS = [
+        'category',
+    ]
 
     # Title case text is like "Sample Text".
     COLS_TO_TITLE_CASE = ['category']
@@ -111,6 +115,10 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
     @abstractmethod
     def replace_values(self, data: ProcessDataType) -> ProcessDataType:
         """Replace values specified in COLS_TO_DROP."""
+
+    @abstractmethod
+    def split_on_capitals(self, data: ProcessDataType) -> ProcessDataType:
+        """Transform like 'businessAnalyst' -> 'business Analyst'."""
 
     @abstractmethod
     def to_title_case(self, data: ProcessDataType) -> ProcessDataType:
@@ -206,6 +214,7 @@ class EtlPipeline(Generic[ProcessDataType, PipelineInputType]):
         data = self._transformation_engine.extract_salaries(data)
         data = self._transformation_engine.unify_to_lower(data)
         data = self._transformation_engine.replace_values(data)
+        data = self._transformation_engine.split_on_capitals(data)
         data = self._transformation_engine.to_title_case(data)
         data = self._transformation_engine.to_capitalized(data)
         data = self._transformation_engine.unify_missing_values(data)
@@ -270,19 +279,22 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
 
     def unify_to_lower(self, data: pd.DataFrame) -> pd.DataFrame:
         for col in EtlTransformationEngine.COLS_TO_LOWER:
-            data[col] = data[col][data[col].notna()].transform(
-                lambda s: s.lower()
-            )
+            data[col] = data[col].str.lower()
         return data
 
     def replace_values(self, data: pd.DataFrame) -> pd.DataFrame:
         return data.replace(to_replace=EtlTransformationEngine.VALS_TO_REPLACE)
 
+    def split_on_capitals(self, data: pd.DataFrame) -> pd.DataFrame:
+        for col in EtlTransformationEngine.COLS_TO_SPLIT_ON_CAPITAL_LETTERS:
+            data[col] = data[col].str.replace(
+                r'(\w)([A-Z])', r'\1 \2', regex=True
+            )
+        return data
+
     def to_title_case(self, data: pd.DataFrame) -> pd.DataFrame:
         for col in EtlTransformationEngine.COLS_TO_TITLE_CASE:
-            data[col] = data[col][data[col].notna()].transform(
-                lambda s: re.sub(r'([A-Z])', r' \1', s).title()
-            )
+            data[col] = data[col].str.title()
         return data
 
     def to_capitalized(self, data: pd.DataFrame) -> pd.DataFrame:
