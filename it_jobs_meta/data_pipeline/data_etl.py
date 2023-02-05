@@ -287,8 +287,8 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
 
     def split_on_capitals(self, data: pd.DataFrame) -> pd.DataFrame:
         for col in EtlTransformationEngine.COLS_TO_SPLIT_ON_CAPITAL_LETTERS:
-            data[col] = data[col][data[col].notna()].transform(
-                lambda s: re.sub(r'(\w)([A-Z])', r'\1 \2', s)
+            data[col] = data[col].str.replace(
+                r'(\w)([A-Z])', r'\1 \2', regex=True
             )
         return data
 
