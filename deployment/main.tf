@@ -5,8 +5,13 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "data_lake_bucket" {
-  bucket        = "it-jobs-meta-data-lake"
+  bucket        = "it-jobs-meta-data-lake-${terraform.workspace}"
   force_destroy = true
+
+  tags = {
+    Name = "S3 bucket for it-jobs-meta data lake"
+    Environment = "${terraform.workspace}"
+  }
 }
 
 resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
@@ -21,13 +26,13 @@ resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
 resource "aws_default_vpc" "default_vpc" {
   tags = {
     Name = "Default AWS VPC"
+    Environment = "${terraform.workspace}"
   }
 }
 
 resource "aws_security_group" "allow_web" {
-  name        = "allow_web_traffic"
+  name        = "allow-web-traffic-it-jobs-meta-server-${terraform.workspace}"
   description = "Allow web trafic for hosting a server"
-  vpc_id      = aws_default_vpc.default_vpc.id
 
   ingress {
     description = "HTTPS"
@@ -64,10 +69,15 @@ resource "aws_security_group" "allow_web" {
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
+
+  tags = {
+    Name = "Allow web traffic for it-jobs-meta"
+    Environment = "${terraform.workspace}"
+  }
 }
 
 resource "aws_iam_policy" "allow_s3_bucket_access" {
-  name        = "allow-s3-bucket-access"
+  name        = "allow-s3-bucket-data-lake-access-${terraform.workspace}"
   path        = "/"
   description = "Allow "
 
@@ -90,10 +100,15 @@ resource "aws_iam_policy" "allow_s3_bucket_access" {
       }
     ]
   })
+
+  tags = {
+    Name = "IAM policy to allow access to s3 it-jobs-meta data lake"
+    Environment = "${terraform.workspace}"
+  }
 }
 
 resource "aws_iam_role" "iam_role_for_ec2" {
-  name = "iam_role_for_ec2_it_jobs_meta_server"
+  name = "iam-role-for-ec2-it-jobs-meta-server-${terraform.workspace}"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
@@ -101,24 +116,32 @@ resource "aws_iam_role" "iam_role_for_ec2" {
       {
         Action = "sts:AssumeRole"
         Effect = "Allow"
-        Sid    = ""
         Principal = {
           Service = "ec2.amazonaws.com"
         }
       },
     ]
   })
-}
 
-resource "aws_iam_instance_profile" "iam_profile_for_ec2" {
-  name = "some-profile"
-  role = aws_iam_role.iam_role_for_ec2.name
+  tags = {
+    Name = "IAM role for EC2 it-jobs-meta server"
+    Environment = "${terraform.workspace}"
+  }
 }
-
 
 resource "aws_iam_role_policy_attachment" "data_lake_bucket_policy_attach" {
   role       = aws_iam_role.iam_role_for_ec2.name
   policy_arn = aws_iam_policy.allow_s3_bucket_access.arn
+}
+
+resource "aws_iam_instance_profile" "iam_profile_for_ec2" {
+  name = "iam-instance-profile-for-ec2-it-jobs-meta-server-${terraform.workspace}"
+  role = aws_iam_role.iam_role_for_ec2.name
+
+  tags = {
+    Name = "IAM profile for EC2 it-jobs-meta server"
+    Environment = "${terraform.workspace}"
+  }
 }
 
 resource "aws_instance" "it_jobs_meta_server" {
@@ -128,7 +151,8 @@ resource "aws_instance" "it_jobs_meta_server" {
   vpc_security_group_ids = [aws_security_group.allow_web.id]
 
   tags = {
-    Name = "It Jobs Meta server"
+    Name = "EC2 instance for it-jobs-meta server"
+    Environment = "${terraform.workspace}"
   }
 
   iam_instance_profile = aws_iam_instance_profile.iam_profile_for_ec2.id
