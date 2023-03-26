@@ -315,7 +315,7 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         data['city'] = data['location'].transform(
             lambda location_dict: [
                 self._geolocator(loc['city'])
-                for loc in location_dict['places']
+                for loc in location_dict['places'] if 'city' in loc
             ]
         )
         return data
