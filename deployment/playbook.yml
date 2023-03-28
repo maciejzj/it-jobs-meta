@@ -106,3 +106,30 @@
     - name: Mount swap
       command: "swapon {{ swap_file_path }}"
       when: ansible_swaptotal_mb < 1
+
+- name: Enable services
+  hosts: it-jobs-meta-server
+  become: true
+
+  tasks:
+    - name: Copy systemd service files
+      copy:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      with_items:
+        - { src: "services/it-jobs-meta-pipeline.service", dest: "/etc/systemd/system/it-jobs-meta-pipeline.service" }
+        - { src: "services/it-jobs-meta-dashboard.service", dest: "/etc/systemd/system/it-jobs-meta-dashboard.service" }
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Start services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - it-jobs-meta-pipeline
+        - it-jobs-meta-dashboard

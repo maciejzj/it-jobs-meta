@@ -1,0 +1,10 @@
+[Unit]
+Description=IT Jobs Meta dashboard server
+
+[Service]
+User=ubuntu
+ExecStart=/home/ubuntu/.local/bin/it-jobs-meta -l /home/ubuntu/it-jobs-meta/it_jobs_meta_dashboard.log dashboard -w -m config/mongodb_config.yml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

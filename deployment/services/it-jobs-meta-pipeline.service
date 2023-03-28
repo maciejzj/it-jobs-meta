@@ -1,0 +1,10 @@
+[Unit]
+Description=IT Jobs Meta data pipeline schedule
+
+[Service]
+User=ubuntu
+ExecStart=/home/ubuntu/.local/bin/it-jobs-meta -l /home/ubuntu/it-jobs-meta/it_jobs_meta_pipeline.log pipeline -c '0 0 * * 1' -b it-jobs-meta/config/s3_bucket_config.yml -m it-jobs-meta/config/mongodb_config.yml
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
