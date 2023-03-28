@@ -2,6 +2,7 @@ provider "aws" {
   region = "eu-central-1"
 }
 
+# S3 bucket data lake
 resource "aws_s3_bucket" "data_lake_bucket" {
   bucket        = "it-jobs-meta-data-lake-${terraform.workspace}"
   force_destroy = true
@@ -12,18 +13,21 @@ resource "aws_s3_bucket" "data_lake_bucket" {
   }
 }
 
-resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
-  bucket = aws_s3_bucket.data_lake_bucket.id
+# EC2 web server
+data "aws_ami" "ubuntu" {
+  most_recent = true
 
-  # Keep the bucket private
-  block_public_acls   = true
-  block_public_policy = true
-  ignore_public_acls  = true
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-focal-20.04-amd64-server-*"]
+  }
+
+  # Canonical
+  owners = ["099720109477"]
 }
 
 resource "aws_instance" "it_jobs_meta_server" {
-  # eu-central-1, Ubuntu 20.04 LTS, amd64
-  ami                    = "ami-0498a49a15494604f"
+  ami                    = data.aws_ami.ubuntu.id
   instance_type          = "t2.micro"
   vpc_security_group_ids = [aws_security_group.allow_web.id]
 
@@ -35,6 +39,8 @@ resource "aws_instance" "it_jobs_meta_server" {
     Environment = "${terraform.workspace}"
   }
 }
+
+# Relay EC2 configuration to Ansible
 
 resource "local_sensitive_file" "private_key_pem" {
   filename = "${path.module}/it-jobs-meta-ec2-server.pem"

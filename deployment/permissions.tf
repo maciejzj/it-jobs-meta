@@ -1,3 +1,4 @@
+# S3 bucket data lake
 resource "aws_iam_policy" "allow_s3_bucket_access" {
   name        = "allow-s3-bucket-data-lake-access-${terraform.workspace}"
   path        = "/"
@@ -29,6 +30,16 @@ resource "aws_iam_policy" "allow_s3_bucket_access" {
   }
 }
 
+resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
+  bucket = aws_s3_bucket.data_lake_bucket.id
+
+  # Keep the bucket private
+  block_public_acls   = true
+  block_public_policy = true
+  ignore_public_acls  = true
+}
+
+# EC2 web server
 resource "aws_iam_role" "iam_role_for_ec2" {
   name = "iam-role-for-ec2-it-jobs-meta-server-${terraform.workspace}"
 
@@ -51,11 +62,6 @@ resource "aws_iam_role" "iam_role_for_ec2" {
   }
 }
 
-resource "aws_iam_role_policy_attachment" "data_lake_bucket_policy_attach" {
-  role       = aws_iam_role.iam_role_for_ec2.name
-  policy_arn = aws_iam_policy.allow_s3_bucket_access.arn
-}
-
 resource "aws_iam_instance_profile" "iam_profile_for_ec2" {
   name = "iam-instance-profile-for-ec2-it-jobs-meta-server-${terraform.workspace}"
   role = aws_iam_role.iam_role_for_ec2.name
@@ -66,6 +72,14 @@ resource "aws_iam_instance_profile" "iam_profile_for_ec2" {
   }
 }
 
+# Attach EC2 server profile with data lake policy
+resource "aws_iam_role_policy_attachment" "data_lake_bucket_policy_attach" {
+  role       = aws_iam_role.iam_role_for_ec2.name
+  policy_arn = aws_iam_policy.allow_s3_bucket_access.arn
+}
+
+
+# EC2 keypair for server access
 resource "tls_private_key" "ec2_server_key" {
   algorithm = "RSA"
   rsa_bits  = 4096
