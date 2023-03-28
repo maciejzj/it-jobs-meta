@@ -1,0 +1,108 @@
+---
+
+- name: Upgrade packages
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade packages
+      apt:
+        upgrade: yes
+
+- name: Set up docker and docker-compose
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Install docker and docker-compose
+      apt:
+        name:
+          - docker
+          - docker-compose
+        state: present
+
+    - name: Create docker group
+      group:
+        name: docker
+        state: present
+
+    - name: Add current user to the docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+- name: Install Python 3.10
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Add apt repository with Python 3.10
+      apt_repository:
+        repo: ppa:deadsnakes/ppa
+
+    - name: Install Python 3.10
+      apt:
+        name:
+          - python3.10
+          - python3.10-distutils
+        state: present
+
+- name: Install Python packages
+  hosts: it-jobs-meta-server
+
+  tasks:
+    - name: Get pip for Python 3.10
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip for Python 3.10
+      command: python3.10 /tmp/get-pip.py
+
+    - name: Install it-jobs-meta package
+      pip:
+        name: git+https://github.com/maciejzj/it-jobs-meta.git@60ab57499c53517b14e31dad171919e801d7bb08
+        executable: /home/{{ ansible_user }}/.local/bin/pip3 
+
+- name: Swap file setup
+  hosts: it-jobs-meta-server
+  become: true
+  vars:
+    swap_file_path: /swapfile
+    swap_file_size_mb: 1000
+
+  tasks:
+    - name: Create swap file
+      command: dd if=/dev/zero of={{ swap_file_path }} bs=1024 count={{ swap_file_size_mb }}k
+               creates="{{ swap_file_path }}"
+
+    - name: Change swap file permissions
+      file: 
+        path: "{{ swap_file_path }}"
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: "Check swap file type"
+      command: file "{{ swap_file_path }}"
+      register: swapfile
+
+    - name: Make swap file
+      command: "sudo mkswap {{ swap_file_path }}"
+      when: swapfile.stdout.find("swap file") == -1
+
+    - name: Write swap entry in fstab
+      mount: 
+        name: none
+        src: "{{ swap_file_path }}"
+        fstype: swap
+        opts: sw
+        passno: 0
+        dump: 0
+        state: present
+
+    - name: Mount swap
+      command: "swapon {{ swap_file_path }}"
+      when: ansible_swaptotal_mb < 1
