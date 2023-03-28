@@ -43,7 +43,7 @@ resource "aws_instance" "it_jobs_meta_server" {
 # Relay EC2 configuration to Ansible
 
 resource "local_sensitive_file" "private_key_pem" {
-  filename = "${path.module}/it-jobs-meta-ec2-server.pem"
+  filename = "${path.module}/artifacts/it-jobs-meta-ec2-server.pem"
   content  = tls_private_key.ec2_server_key.private_key_pem
 }
 
@@ -55,6 +55,6 @@ locals {
 }
 
 resource "local_file" "ansible_inventory_file" {
-  filename = "${path.module}/hosts"
+  filename = "${path.module}/artifacts/hosts"
   content  = local.ansible_inventory
 }
