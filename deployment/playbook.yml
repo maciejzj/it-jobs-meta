@@ -12,27 +12,16 @@
       apt:
         upgrade: yes
 
-- name: Set up docker and docker-compose
+- name: Install server and db packages
   hosts: it-jobs-meta-server
   become: true
   tasks:
     - name: Install docker and docker-compose
       apt:
         name:
-          - docker
-          - docker-compose
+          - mongodb
+          - nginx
         state: present
-
-    - name: Create docker group
-      group:
-        name: docker
-        state: present
-
-    - name: Add current user to the docker group
-      user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: yes
 
 - name: Install Python 3.10
   hosts: it-jobs-meta-server
@@ -117,9 +106,11 @@
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
         mode: 0644
-      with_items:
-        - { src: "services/it-jobs-meta-pipeline.service", dest: "/etc/systemd/system/it-jobs-meta-pipeline.service" }
-        - { src: "services/it-jobs-meta-dashboard.service", dest: "/etc/systemd/system/it-jobs-meta-dashboard.service" }
+      loop:
+        - src: "services/it-jobs-meta-pipeline.service"
+          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
+        - src: "services/it-jobs-meta-dashboard.service"
+          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
 
     - name: Reload systemd daemon
       systemd:
@@ -133,3 +124,37 @@
       loop:
         - it-jobs-meta-pipeline
         - it-jobs-meta-dashboard
+
+- name: Setup MongoDB
+  hosts: it-jobs-meta-server
+
+  vars:
+    ansible_python_interpreter: /usr/bin/python3.10
+    mongodb_user: it_jobs_meta_admin
+    mongodb_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits,length=20') }}"
+    mongodb_database: it_jobs_meta_warehouse
+
+  tasks:
+    - name: Create MongoDB user
+      mongodb_user:
+        database: admin
+        name: "{{ mongodb_user }}"
+        password: "{{ mongodb_password }}"
+        roles:
+          - dbAdminAnyDatabase
+          - userAdminAnyDatabase
+          - readWriteAnyDatabase
+
+    - name: Grant access to database
+      mongodb_user:
+        database: "{{ mongodb_database }}"
+        name: "{{ mongodb_user }}"
+        password: "{{ mongodb_password }}"
+        roles:
+          - readWrite
+
+    - name: Create MongoDB config template
+      template:
+        src: templates/mongodb_config.yaml.j2
+        dest: /home/ubuntu/mongodb_config.yaml
+        mode: '0644'
