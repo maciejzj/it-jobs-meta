@@ -206,12 +206,18 @@
   become: true
 
   vars:
-    domain: dev.itjobsmeta.net
+    # If workspace is "deployment", the domain is "itjobsmeta.net", if else the
+    # domain is <workspace>.itjobsmeta.net
+    domain: "{{ (workspace == 'deployment') | ternary('', workspace + '.') }}itjobsmeta.net"
     ip_address: "{{ ansible_host }}"
     email: maciejzjg@gmail.com
-    # Czy hostname to domain?
 
   tasks:
+    - name: debug-domain
+      ansible.builtin.debug:
+        var: domain
+        verbosity: 1
+
     - name: Copy Nginx configuration file
       template:
         src: "{{ item.src }}"

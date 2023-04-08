@@ -51,6 +51,7 @@ locals {
   ansible_inventory = templatefile("${path.module}/templates/hosts.tpl", {
     instance_ip  = aws_instance.it_jobs_meta_server.public_ip
     ssh_key_path = local_sensitive_file.private_key_pem.filename
+    workspace = terraform.workspace
   })
 }
 
