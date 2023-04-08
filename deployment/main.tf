@@ -54,7 +54,18 @@ locals {
   })
 }
 
+locals {
+  s3_bucket_config = templatefile("${path.module}/templates/s3_bucket_config.yml.tpl", {
+    bucket_name = aws_s3_bucket.data_lake_bucket.bucket
+  })
+}
+
 resource "local_file" "ansible_inventory_file" {
   filename = "${path.module}/artifacts/hosts"
   content  = local.ansible_inventory
+}
+
+resource "local_file" "s3_bucket_config_file" {
+  filename = "${path.module}/artifacts/s3_bucket_config.yml"
+  content = local.s3_bucket_config
 }
