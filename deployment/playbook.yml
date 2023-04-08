@@ -19,9 +19,22 @@
     - name: Install docker and docker-compose
       apt:
         name:
-          - mongodb
           - nginx
+          - certbot
+          - docker.io
+          - python3-certbot-nginx
         state: present
+
+    - name: Create docker group
+      group:
+        name: docker
+        state: present
+
+    - name: Add current user to the docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
 
 - name: Install Python 3.10
   hosts: it-jobs-meta-server
@@ -53,7 +66,7 @@
     - name: Install it-jobs-meta package
       pip:
         name: git+https://github.com/maciejzj/it-jobs-meta.git@60ab57499c53517b14e31dad171919e801d7bb08
-        executable: /home/{{ ansible_user }}/.local/bin/pip3 
+        executable: /home/{{ ansible_user }}/.local/bin/pip3.10
 
 - name: Swap file setup
   hosts: it-jobs-meta-server
@@ -65,7 +78,8 @@
   tasks:
     - name: Create swap file
       command: dd if=/dev/zero of={{ swap_file_path }} bs=1024 count={{ swap_file_size_mb }}k
-               creates="{{ swap_file_path }}"
+      args:
+        creates: "{{ swap_file_path }}"
 
     - name: Change swap file permissions
       file: 
@@ -96,65 +110,147 @@
       command: "swapon {{ swap_file_path }}"
       when: ansible_swaptotal_mb < 1
 
-- name: Enable services
+# - name: Enable services
+#   hosts: it-jobs-meta-server
+#   become: true
+#
+#   tasks:
+#     - name: Copy systemd service files
+#       copy:
+#         src: "{{ item.src }}"
+#         dest: "{{ item.dest }}"
+#         mode: 0644
+#       loop:
+#         - src: "services/it-jobs-meta-pipeline.service"
+#           dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
+#         - src: "services/it-jobs-meta-dashboard.service"
+#           dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
+#
+#     - name: Reload systemd daemon
+#       systemd:
+#         daemon_reload: yes
+#
+#     - name: Start services
+#       systemd:
+#         name: "{{ item }}"
+#         state: started
+#         enabled: yes
+#       loop:
+#         - it-jobs-meta-pipeline
+#         - it-jobs-meta-dashboard
+#
+- name: Setup S3
   hosts: it-jobs-meta-server
   become: true
 
   tasks:
-    - name: Copy systemd service files
+    - name: Copy s3 config
       copy:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
+        src: artifacts/s3_bucket_config.yml
+        dest: /home/{{ ansible_user }}/s3_bucket_config.yml
         mode: 0644
-      loop:
-        - src: "services/it-jobs-meta-pipeline.service"
-          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
-        - src: "services/it-jobs-meta-dashboard.service"
-          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
 
-    - name: Reload systemd daemon
-      systemd:
-        daemon_reload: yes
-
-    - name: Start services
-      systemd:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - it-jobs-meta-pipeline
-        - it-jobs-meta-dashboard
 
 - name: Setup MongoDB
   hosts: it-jobs-meta-server
+  become: true
 
   vars:
-    ansible_python_interpreter: /usr/bin/python3.10
-    mongodb_user: it_jobs_meta_admin
-    mongodb_password: "{{ lookup('password', '/dev/null chars=ascii_letters,digits,length=20') }}"
+    mongodb_username: it_jobs_meta_worker
+    mongodb_password: "{{ lookup('password', 'artifacts/mongodb_password chars=ascii_letters,digits,length=20') }}"
     mongodb_database: it_jobs_meta_warehouse
 
   tasks:
-    - name: Create MongoDB user
-      mongodb_user:
-        database: admin
-        name: "{{ mongodb_user }}"
-        password: "{{ mongodb_password }}"
-        roles:
-          - dbAdminAnyDatabase
-          - userAdminAnyDatabase
-          - readWriteAnyDatabase
+    - name: Get pip for sys
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
 
-    - name: Grant access to database
-      mongodb_user:
-        database: "{{ mongodb_database }}"
-        name: "{{ mongodb_user }}"
-        password: "{{ mongodb_password }}"
-        roles:
-          - readWrite
+    - name: Install pip for sys
+      command: python3 /tmp/get-pip.py
+
+    - name: install docker_image
+      pip:
+        name: 
+          - docker
+        state: present
+
+    - name: Pull MongoDB Docker image
+      docker_image:
+        name: mongo
+        state: present
+        source: pull
+
+    - name: Run MongoDB Docker container
+      docker_container:
+        name: mongodb
+        image: mongo
+        env:
+          # MONGO_INITDB_DATABASE: {{ mongodb_database }}
+          MONGO_INITDB_ROOT_USERNAME: "{{ mongodb_username }}"
+          MONGO_INITDB_ROOT_PASSWORD: "{{ mongodb_password }}"
+        published_ports:
+          - "27017:27017"
+        state: started
+        restart_policy: always
+        detach: true
 
     - name: Create MongoDB config template
       template:
         src: templates/mongodb_config.yaml.j2
-        dest: /home/ubuntu/mongodb_config.yaml
+        dest: /home/{{ ansible_user }}/mongodb_config.yaml
         mode: '0644'
+
+- name: Setup nginx
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars:
+    domain: dev.itjobsmeta.net
+    ip_address: "{{ ansible_host }}"
+    email: maciejzjg@gmail.com
+    # Czy hostname to domain?
+
+  tasks:
+    - name: Copy Nginx configuration file
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        # sprawezic lokalizacje ngin conf
+        # Zmienic nazwe default
+        - src: templates/default.j2
+          dest: /etc/nginx/sites-available/{{ domain }}
+        - src: templates/nginx.conf.j2
+          dest: /etc/nginx/nginx.conf
+      notify:
+        - Reload Nginx
+
+    - name: Register certbot
+      shell: |
+        certbot -n register --agree-tos --email {{ email }}
+        touch /etc/letsencrypt/.registered
+      args:
+        creates: /etc/letsencrypt/.registered
+
+    - name: Get certificate
+      command: certbot -n certonly --nginx -d {{ domain }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domain }}
+      ignore_errors: true
+      tags:
+        - nginx
+        - certbot
+
+    - name: Create symlink to enable site
+      file:
+        src: /etc/nginx/sites-available/{{ domain }}
+        dest: /etc/nginx/sites-enabled/{{ domain }}
+        state: link
+      notify:
+        - Reload Nginx
+
+  handlers:
+    - name: Reload Nginx
+      service:
+        name: nginx
