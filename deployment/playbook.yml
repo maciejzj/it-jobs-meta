@@ -248,6 +248,13 @@
         - nginx
         - certbot
 
+    - name: Disable default nginx website
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+        - Reload Nginx
+
     - name: Create symlink to enable site
       file:
         src: /etc/nginx/sites-available/{{ domain }}
