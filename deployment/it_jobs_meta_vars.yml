@@ -1,0 +1,9 @@
+it_jobs_meta_version: 140af13758df652018afce5d2ef8e1808a3c35a8
+# Add the following for weekly updates:
+# '--schedule "0 0 * * 1"'
+# Add the following to run from an archived snapshot:
+# '--from-archive "https://github.com/maciejzj/it-jobs-meta/blob/master/it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json"'
+# Add the following to store data in the s3 bucket data lake:
+# '--s3-bucket /home/{{ ansible_user }}/it-jobs-meta/s3_bucket_config.yml'
+pipeline_command_params: '--from-archive "https://github.com/maciejzj/it-jobs-meta/raw/master/it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json" -m /home/{{ ansible_user }}/it-jobs-meta/mongodb_config.yml'
+dashboard_command_params: '--with-wsgi --mongodb /home/{{ ansible_user }}/it-jobs-meta/mongodb_config.yml'

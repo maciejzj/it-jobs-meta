@@ -59,13 +59,12 @@ class DataPipeline:
             logging.info('Attempting to perform data ingestion step')
             data = self._data_source.get()
             logging.info('Data ingestion succeeded')
+            data_key = data.make_key_for_data()
+            data_as_json = data.make_json_str_from_data()
 
             if self._data_lake_factory is not None:
                 logging.info('Attempting to archive raw data in data lake')
                 data_lake = self._data_lake_factory.make()
-
-                data_key = data.make_key_for_data()
-                data_as_json = data.make_json_str_from_data()
                 data_lake.set_data(data_key, data.make_json_str_from_data())
                 logging.info(
                     f'Data archival succeeded, stored under "{data_key}" key'

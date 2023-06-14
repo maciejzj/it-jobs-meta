@@ -63,6 +63,9 @@
 - name: Install Python packages
   hosts: it-jobs-meta-server
 
+  vars_files:
+    - it_jobs_meta_vars.yml
+
   tasks:
     - name: Get pip for Python 3.10
       get_url:
@@ -74,7 +77,7 @@
 
     - name: Install it-jobs-meta package
       pip:
-        name: git+https://github.com/maciejzj/it-jobs-meta.git@60ab57499c53517b14e31dad171919e801d7bb08
+        name: git+https://github.com/maciejzj/it-jobs-meta.git@{{ it_jobs_meta_version }}
         executable: /home/{{ ansible_user }}/.local/bin/pip3.10
 
 - name: Swap file setup
@@ -119,35 +122,38 @@
       command: "swapon {{ swap_file_path }}"
       when: ansible_swaptotal_mb < 1
 
-# - name: Enable services
-#   hosts: it-jobs-meta-server
-#   become: true
-#
-#   tasks:
-#     - name: Copy systemd service files
-#       copy:
-#         src: "{{ item.src }}"
-#         dest: "{{ item.dest }}"
-#         mode: 0644
-#       loop:
-#         - src: "services/it-jobs-meta-pipeline.service"
-#           dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
-#         - src: "services/it-jobs-meta-dashboard.service"
-#           dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
-#
-#     - name: Reload systemd daemon
-#       systemd:
-#         daemon_reload: yes
-#
-#     - name: Start services
-#       systemd:
-#         name: "{{ item }}"
-#         state: started
-#         enabled: yes
-#       loop:
-#         - it-jobs-meta-pipeline
-#         - it-jobs-meta-dashboard
-#
+- name: Enable services
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars_files:
+    - it_jobs_meta_vars.yml
+
+  tasks:
+    - name: Copy systemd service files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      loop:
+        - src: "templates/it-jobs-meta-pipeline.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
+        - src: "templates/it-jobs-meta-dashboard.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Start services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - it-jobs-meta-pipeline
+        - it-jobs-meta-dashboard
+
 - name: Setup S3
   hosts: it-jobs-meta-server
   become: true
@@ -156,7 +162,7 @@
     - name: Copy s3 config
       copy:
         src: artifacts/s3_bucket_config.yml
-        dest: /home/{{ ansible_user }}/s3_bucket_config.yml
+        dest: /home//{{ ansible_user }}/it-jobs-meta/s3_bucket_config.yml
         mode: 0644
 
 
@@ -205,8 +211,8 @@
 
     - name: Create MongoDB config template
       template:
-        src: templates/mongodb_config.yaml.j2
-        dest: /home/{{ ansible_user }}/mongodb_config.yaml
+        src: templates/mongodb_config.yml.j2
+        dest: /home/{{ ansible_user }}/it-jobs-meta/mongodb_config.yml
         mode: '0644'
 
 - name: Setup nginx
