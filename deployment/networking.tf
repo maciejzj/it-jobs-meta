@@ -1,50 +1,61 @@
-resource "aws_default_vpc" "default_vpc" {
+resource "aws_vpc" "it_jobs_meta" {
+  cidr_block = "10.0.0.0/24"
+
   tags = {
-    Name        = "Default AWS VPC"
+    Name        = "Main VPC for it-jobs-meta services"
+    Project     = "${var.project_name_tag}"
     Environment = "${terraform.workspace}"
   }
 }
 
+resource "aws_internet_gateway" "it_jobs_meta_gateway" {
+  vpc_id = aws_vpc.it_jobs_meta.id
 
-# Create VPC
-resource "aws_vpc" "my_vpc" {
-  cidr_block = "10.0.0.0/24"
+  tags = {
+    Name        = "Main web gateway for it-jobs-meta services"
+    Project     = "${var.project_name_tag}"
+    Environment = "${terraform.workspace}"
+  }
 }
 
-# Create internet gateway for VPC
-resource "aws_internet_gateway" "gw" {
-  vpc_id = aws_vpc.my_vpc.id
-}
-
-# Create public subnet
-resource "aws_subnet" "public_subnet" {
-  vpc_id     = aws_vpc.my_vpc.id
+resource "aws_subnet" "it_jobs_meta_public" {
+  vpc_id     = aws_vpc.it_jobs_meta.id
   cidr_block = "10.0.0.16/28"
+
+  tags = {
+    Name        = "Public subnet for it-jobs-meta services"
+    Project     = "${var.project_name_tag}"
+    Environment = "${terraform.workspace}"
+  }
 }
 
-# Create route table for public subnet
-resource "aws_route_table" "public_rt" {
-  vpc_id = aws_vpc.my_vpc.id
+resource "aws_route_table" "it_jobs_meta_public_networking" {
+  vpc_id = aws_vpc.it_jobs_meta.id
+
+  tags = {
+    Name        = "Main route table for it-jobs-meta services"
+    Project     = "${var.project_name_tag}"
+    Environment = "${terraform.workspace}"
+  }
 }
 
 # Create route to internet gateway for public subnet
-resource "aws_route" "public_rt_internet" {
-  route_table_id         = aws_route_table.public_rt.id
+resource "aws_route" "it_jobs_meta_public_networking" {
+  route_table_id         = aws_route_table.it_jobs_meta_public_networking.id
   destination_cidr_block = "0.0.0.0/0"
-  gateway_id             = aws_internet_gateway.gw.id
+  gateway_id             = aws_internet_gateway.it_jobs_meta_gateway.id
 }
 
-# Associate public subnet with route table
-resource "aws_route_table_association" "public_subnet_association" {
-  subnet_id      = aws_subnet.public_subnet.id
-  route_table_id = aws_route_table.public_rt.id
+resource "aws_route_table_association" "it_jobd_meta_public_subnet_networking" {
+  subnet_id      = aws_subnet.it_jobs_meta_public.id
+  route_table_id = aws_route_table.it_jobs_meta_public_networking.id
 }
 
 resource "aws_security_group" "allow_web" {
   name        = "allow-web-traffic-it-jobs-meta-server-${terraform.workspace}"
-  description = "Allow web trafic for hosting a server"
+  description = "Allow web traffic for hosting web server via http and https with ssh access"
 
-  vpc_id = aws_vpc.my_vpc.id
+  vpc_id = aws_vpc.it_jobs_meta.id
 
   ingress {
     description = "HTTPS"
@@ -84,6 +95,7 @@ resource "aws_security_group" "allow_web" {
 
   tags = {
     Name        = "Allow web traffic for it-jobs-meta"
+    Project     = "${var.project_name_tag}"
     Environment = "${terraform.workspace}"
   }
 }

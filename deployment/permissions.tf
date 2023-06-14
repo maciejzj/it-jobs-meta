@@ -1,8 +1,7 @@
-# S3 bucket data lake
 resource "aws_iam_policy" "allow_s3_bucket_access" {
   name        = "allow-s3-bucket-data-lake-access-${terraform.workspace}"
   path        = "/"
-  description = "Allow "
+  description = "Allow access to S3 data lake"
 
   policy = jsonencode({
     "Version" : "2012-10-17",
@@ -18,20 +17,21 @@ resource "aws_iam_policy" "allow_s3_bucket_access" {
         ],
         "Resource" : [
           "arn:aws:s3:::*/*",
-          aws_s3_bucket.data_lake_bucket.arn
+          aws_s3_bucket.data_lake_storage.arn
         ]
       }
     ]
   })
 
   tags = {
-    Name        = "IAM policy to allow access to s3 it-jobs-meta data lake"
+    Name        = "IAM policy to allow access to S3 it-jobs-meta data lake"
+    Project     = "${var.project_name_tag}"
     Environment = "${terraform.workspace}"
   }
 }
 
 resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
-  bucket = aws_s3_bucket.data_lake_bucket.id
+  bucket = aws_s3_bucket.data_lake_storage.id
 
   # Keep the bucket private
   block_public_acls   = true
@@ -39,7 +39,6 @@ resource "aws_s3_bucket_public_access_block" "data_lake_bucket_access" {
   ignore_public_acls  = true
 }
 
-# EC2 web server
 resource "aws_iam_role" "iam_role_for_ec2" {
   name = "iam-role-for-ec2-it-jobs-meta-server-${terraform.workspace}"
 
@@ -58,6 +57,7 @@ resource "aws_iam_role" "iam_role_for_ec2" {
 
   tags = {
     Name        = "IAM role for EC2 it-jobs-meta server"
+    Project     = "${var.project_name_tag}"
     Environment = "${terraform.workspace}"
   }
 }
@@ -68,6 +68,7 @@ resource "aws_iam_instance_profile" "iam_profile_for_ec2" {
 
   tags = {
     Name        = "IAM profile for EC2 it-jobs-meta server"
+    Project     = "${var.project_name_tag}"
     Environment = "${terraform.workspace}"
   }
 }
@@ -78,14 +79,13 @@ resource "aws_iam_role_policy_attachment" "data_lake_bucket_policy_attach" {
   policy_arn = aws_iam_policy.allow_s3_bucket_access.arn
 }
 
-
 # EC2 keypair for server access
-resource "tls_private_key" "ec2_server_key" {
+resource "tls_private_key" "it_jobs_meta_ec2_server" {
   algorithm = "RSA"
   rsa_bits  = 4096
 }
 
-resource "aws_key_pair" "ec2_server_keypair" {
-  key_name   = "keypair-it-jobs-meta-server"
-  public_key = tls_private_key.ec2_server_key.public_key_openssh
+resource "aws_key_pair" "it_jobs_meta_ec2_server" {
+  key_name   = "keypair-it-jobs-meta-ec2-server"
+  public_key = tls_private_key.it_jobs_meta_ec2_server.public_key_openssh
 }
