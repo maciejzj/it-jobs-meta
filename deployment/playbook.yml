@@ -20,10 +20,19 @@
       apt:
         name:
           - nginx
-          - certbot
           - docker.io
-          - python3-certbot-nginx
-        state: present
+        state: latest
+
+    - name: Install certbot
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Ensure symbolic link exists
+      file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        state: link
 
     - name: Create docker group
       group:
@@ -186,7 +195,6 @@
         name: mongodb
         image: mongo
         env:
-          # MONGO_INITDB_DATABASE: {{ mongodb_database }}
           MONGO_INITDB_ROOT_USERNAME: "{{ mongodb_username }}"
           MONGO_INITDB_ROOT_PASSWORD: "{{ mongodb_password }}"
         published_ports:
