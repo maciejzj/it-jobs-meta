@@ -1,4 +1,4 @@
-it_jobs_meta_version: 46f6e435d2f646ca3da825b54d690c0bbe6d4a58
+it_jobs_meta_version: 4b04a05bef8f9c9cbcad08e6d3bed2544e687b46
 # Add the following for weekly updates:
 # '--schedule "0 0 * * 1"'
 # Add the following to run from an archived snapshot:
