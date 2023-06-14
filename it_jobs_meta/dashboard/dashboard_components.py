@@ -289,7 +289,6 @@ class SalariesMapFilteredBySeniority:
         postings_df,
         seniority: str,
     ) -> go.Figure:
-
         postings_df = postings_df.explode('seniority')
         postings_df = postings_df[postings_df['seniority'] == seniority]
 
@@ -307,7 +306,6 @@ class SalariesMapJunior(GraphFigure):
         cls,
         postings_df,
     ) -> go.Figure:
-
         fig = SalariesMapFilteredBySeniority.make_fig(postings_df, 'Junior')
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
@@ -324,7 +322,6 @@ class SalariesMapMid(GraphFigure):
         cls,
         postings_df,
     ) -> go.Figure:
-
         fig = SalariesMapFilteredBySeniority.make_fig(postings_df, 'Mid')
         fig.update_layout(title=cls.TITLE)
         fig.update_coloraxes(showscale=False)
@@ -356,7 +353,6 @@ class TechnologiesViolinChart(GraphFigure):
         cls,
         postings_df,
     ) -> go.Figure:
-
         postings_df = postings_df.explode('seniority')
         tech_most_freq = get_rows_with_n_most_frequent_vals_in_col(
             postings_df, 'technology', cls.N_MOST_FREQ_TECH

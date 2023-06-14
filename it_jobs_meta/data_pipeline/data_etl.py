@@ -1,7 +1,6 @@
 """Data Extraction, Transformations, and Loading for the job postings data."""
 
 import dataclasses
-import re
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from pathlib import Path
@@ -260,7 +259,7 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
             )
         except KeyError as error:
             raise ValueError(
-                'Data extractor got correct data format type and'
+                'Data extractor got correct date format type and '
                 'metadata, but "raw_data" was malformed'
             ) from error
 
@@ -315,7 +314,8 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
         data['city'] = data['location'].transform(
             lambda location_dict: [
                 self._geolocator(loc['city'])
-                for loc in location_dict['places'] if 'city' in loc
+                for loc in location_dict['places']
+                if 'city' in loc
             ]
         )
         return data

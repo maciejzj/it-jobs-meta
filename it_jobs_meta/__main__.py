@@ -7,6 +7,10 @@ from it_jobs_meta.dashboard.dashboard import (
     DashboardDataProviderFactory,
 )
 from it_jobs_meta.data_pipeline.data_etl import EtlLoaderFactory
+from it_jobs_meta.data_pipeline.data_ingestion import (
+    ArchiveNoFluffJObsPostingsDataSource,
+    NoFluffJobsPostingsDataSource,
+)
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 from it_jobs_meta.data_pipeline.data_pipeline import DataPipeline
 
@@ -22,23 +26,36 @@ def main():
 
     match parser.args['command']:
         case 'pipeline':
-            data_lake_type, data_lake_cfg_path = parser.extract_data_lake()
-            (
-                warehouse_type,
-                warehouse_cfg_path,
-            ) = parser.extract_etl_loader()
-            data_lake_factory = DataLakeFactory(
-                data_lake_type, data_lake_cfg_path
-            )
+            # Data ingestion/source setup
+            if (url := parser.args['from_archive']) is not None:
+                data_source = ArchiveNoFluffJObsPostingsDataSource(url)
+            else:
+                data_source = NoFluffJobsPostingsDataSource()
+
+            # Data lake setup
+            data_lake_setup = parser.extract_data_lake()
+            if data_lake_setup is not None:
+                data_lake_type, data_lake_cfg_path = parser.extract_data_lake()
+                data_lake_factory = DataLakeFactory(
+                    data_lake_type, data_lake_cfg_path
+                )
+            else:
+                data_lake_factory = None
+
+            # Data warehouse setup
+            warehouse_type, warehouse_cfg_path = parser.extract_etl_loader()
             etl_loader_factory = EtlLoaderFactory(
                 warehouse_type, warehouse_cfg_path
             )
 
+            # Pipeline composition
             data_pipeline = DataPipeline(
-                data_lake_factory,
-                etl_loader_factory,
+                data_source=data_source,
+                data_lake_factory=data_lake_factory,
+                etl_loader_factory=etl_loader_factory,
             )
 
+            # Execution scheduling
             if parser.args['schedule'] is not None:
                 data_pipeline.schedule(parser.args['schedule'])
             else:

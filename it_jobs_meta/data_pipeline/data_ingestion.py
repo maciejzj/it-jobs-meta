@@ -15,9 +15,8 @@ from it_jobs_meta.data_pipeline.data_formats import (
 class PostingsDataSource(ABC):
     """Source for fetching postings data from the web."""
 
-    @classmethod
     @abstractmethod
-    def get(cls) -> PostingsData:
+    def get(self) -> PostingsData:
         """Get a batch of postings data from the source."""
 
 
@@ -27,18 +26,35 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
     POSTINGS_API_URL_SOURCE = 'https://nofluffjobs.com/api/posting'
     SOURCE_NAME = 'nofluffjobs'
 
-    @classmethod
-    def get(cls) -> PostingsData:
+    def get(self) -> PostingsData:
         """Get a snapshot of postings data from No Fluff Jobs in one batch."""
-        response = requests.get(cls.POSTINGS_API_URL_SOURCE)
+        response = requests.get(self.POSTINGS_API_URL_SOURCE)
         raw_data = response.json()
         datetime_now = dt.datetime.now()
 
         metadata = PostingsMetadata(
-            source_name=cls.SOURCE_NAME, obtained_datetime=datetime_now
+            source_name=self.SOURCE_NAME, obtained_datetime=datetime_now
         )
         data = NoFluffJObsPostingsData(metadata=metadata, raw_data=raw_data)
 
+        return data
+
+
+class ArchiveNoFluffJObsPostingsDataSource:
+    """Load postings data from archive under URL (from data lake or file)"""
+
+    def __init__(self, posting_url: str):
+        """
+        Set source URL from archive.
+
+        The data must be already archived in the data lake format.
+        """
+        self._posting_url = posting_url
+
+    def get(self) -> PostingsData:
+        """Get a posting from the archive."""
+        response = requests.get(self._posting_url)
+        data = NoFluffJObsPostingsData.from_json_str(response.text)
         return data
 
 
