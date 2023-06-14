@@ -100,7 +100,7 @@ processed form (ready to be used by the dashboard later).
 
 ```
 $ it-jobs-meta -h
-usage: it-jobs-meta pipeline [-h] [-c CRON_EXPRESSION] (-r CONFIG_PATH | -b CONFIG_PATH) (-m CONFIG_PATH | -s CONFIG_PATH)
+usage: it-jobs-meta pipeline [-h] [-c CRON_EXPRESSION] [-a URL] [-r CONFIG_PATH | -b CONFIG_PATH] (-m CONFIG_PATH | -s CONFIG_PATH)
 
 Run data pipeline once or periodically, scrap data, store it in the data lake, load processed data to the data warehouse.
 
@@ -108,10 +108,12 @@ options:
   -h, --help            show this help message and exit
   -c CRON_EXPRESSION, --schedule CRON_EXPRESSION
                         schedule pipeline to run periodically with a cron expression
+  -a URL, --from-archive URL
+                        Obtain postings data from archive (URL must point to JSON in data lake storage format)
   -r CONFIG_PATH, --redis CONFIG_PATH
                         choose Redis as the data lake with the given config file
   -b CONFIG_PATH, --s3-bucket CONFIG_PATH
-                        choose S3 Bucket as the data lake with given config file
+                        choose S3 Bucket as the data lake with the given config file
   -m CONFIG_PATH, --mongodb CONFIG_PATH
                         choose MongoDB as the data warehouse with the given config file
   -s CONFIG_PATH, --sql CONFIG_PATH
