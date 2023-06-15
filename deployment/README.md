@@ -33,7 +33,7 @@ can be used to setup a new environment. Infrastructure resources will be named
 and tagged according to the workspace name and the service will be deployed to a
 `<worksapce_name>.itjobsmeta.net` domain (e.g. for the `dev` workspace will be
 deployed under `dev.itjobsmeta.net`). The main (`default`) workspace is the
-deployment one--it will be exposed to `itjobsmeta.net`.
+deployment one—it will be exposed to `itjobsmeta.net`.
 
 Run `terraform apply` to set up the infrastructure.
 
