@@ -239,7 +239,7 @@
       loop:
         # sprawezic lokalizacje ngin conf
         # Zmienic nazwe default
-        - src: templates/default.j2
+        - src: templates/itjobsmeta.net.j2
           dest: /etc/nginx/sites-available/{{ domain }}
         - src: templates/nginx.conf.j2
           dest: /etc/nginx/nginx.conf
@@ -279,5 +279,6 @@
 
   handlers:
     - name: Reload Nginx
-      service:
+      systemd:
         name: nginx
+        state: reloaded
