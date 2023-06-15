@@ -1,6 +1,7 @@
 ---
 
-- name: Upgrade packages
+# Startup upgrades
+- name: Upgrade apt packages
   hosts: it-jobs-meta-server
   become: true
   tasks:
@@ -8,78 +9,13 @@
       apt:
         update_cache: yes
 
-    - name: Upgrade packages
+    - name: Upgrade apt packages
       apt:
         upgrade: yes
 
-- name: Install server and db packages
-  hosts: it-jobs-meta-server
-  become: true
-  tasks:
-    - name: Install docker and docker-compose
-      apt:
-        name:
-          - nginx
-          - docker.io
-        state: latest
 
-    - name: Install certbot
-      community.general.snap:
-        name: certbot
-        classic: yes
-
-    - name: Ensure symbolic link exists
-      file:
-        src: /snap/bin/certbot
-        dest: /usr/bin/certbot
-        state: link
-
-    - name: Create docker group
-      group:
-        name: docker
-        state: present
-
-    - name: Add current user to the docker group
-      user:
-        name: "{{ ansible_user }}"
-        groups: docker
-        append: yes
-
-- name: Install Python 3.10
-  hosts: it-jobs-meta-server
-  become: true
-  tasks:
-    - name: Add apt repository with Python 3.10
-      apt_repository:
-        repo: ppa:deadsnakes/ppa
-
-    - name: Install Python 3.10
-      apt:
-        name:
-          - python3.10
-          - python3.10-distutils
-        state: present
-
-- name: Install Python packages
-  hosts: it-jobs-meta-server
-
-  vars_files:
-    - it_jobs_meta_vars.yml
-
-  tasks:
-    - name: Get pip for Python 3.10
-      get_url:
-        url: https://bootstrap.pypa.io/get-pip.py
-        dest: /tmp/get-pip.py
-
-    - name: Install pip for Python 3.10
-      command: python3.10 /tmp/get-pip.py
-
-    - name: Install it-jobs-meta package
-      pip:
-        name: git+https://github.com/maciejzj/it-jobs-meta.git@{{ it_jobs_meta_version }}
-        executable: /home/{{ ansible_user }}/.local/bin/pip3.10
-
+# Rudimentary server setup
+# Read README for some remarks about the swap
 - name: Swap file setup
   hosts: it-jobs-meta-server
   become: true
@@ -94,7 +30,7 @@
         creates: "{{ swap_file_path }}"
 
     - name: Change swap file permissions
-      file: 
+      file:
         path: "{{ swap_file_path }}"
         owner: root
         group: root
@@ -109,7 +45,7 @@
       when: swapfile.stdout.find("swap file") == -1
 
     - name: Write swap entry in fstab
-      mount: 
+      mount:
         name: none
         src: "{{ swap_file_path }}"
         fstype: swap
@@ -122,39 +58,58 @@
       command: "swapon {{ swap_file_path }}"
       when: ansible_swaptotal_mb < 1
 
-- name: Enable services
-  hosts: it-jobs-meta-server
-  become: true
 
-  vars_files:
-    - it_jobs_meta_vars.yml
+- name: Create deployment directories and paths
+  hosts: it-jobs-meta-server
 
   tasks:
-    - name: Copy systemd service files
-      template:
-        src: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-        mode: 0644
-      loop:
-        - src: "templates/it-jobs-meta-pipeline.service.j2"
-          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
-        - src: "templates/it-jobs-meta-dashboard.service.j2"
-          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
+    # Config files and logs will be stored in this directory
+    - name: Create working directory for the deployment app
+      file:
+        path: /home/{{ ansible_user }}/it-jobs-meta
+        recurse: true
+        state: directory
 
-    - name: Reload systemd daemon
-      systemd:
-        daemon_reload: yes
 
-    - name: Start services
-      systemd:
-        name: "{{ item }}"
-        state: started
-        enabled: yes
-      loop:
-        - it-jobs-meta-pipeline
-        - it-jobs-meta-dashboard
+# Server oriented dependencies
+- name: Install Nginx server dependencies and docker for MongoDB database
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    # Installations
+    - name: Install docker
+      apt:
+        name:
+          - nginx
+          - docker.io
+        state: latest
 
-- name: Setup S3
+    - name: Install certbot
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Symlink certbot installation to main user binaries dir
+      file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        state: link
+
+    # Docker setup
+    - name: Create docker group
+      group:
+        name: docker
+        state: present
+
+    - name: Add current user to the docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+
+# Databases setup
+- name: Setup S3 data lake access config
   hosts: it-jobs-meta-server
   become: true
 
@@ -166,7 +121,7 @@
         mode: 0644
 
 
-- name: Setup MongoDB
+- name: Setup MongoDB data warehouse access config
   hosts: it-jobs-meta-server
   become: true
 
@@ -176,17 +131,18 @@
     mongodb_database: it_jobs_meta_warehouse
 
   tasks:
-    - name: Get pip for sys
+    # MongoDB docker setup depends on system Python and pip
+    - name: Get pip for system Python
       get_url:
         url: https://bootstrap.pypa.io/get-pip.py
         dest: /tmp/get-pip.py
 
-    - name: Install pip for sys
+    - name: Install pip for system Python
       command: python3 /tmp/get-pip.py
 
     - name: install docker_image
       pip:
-        name: 
+        name:
           - docker
         state: present
 
@@ -215,7 +171,80 @@
         dest: /home/{{ ansible_user }}/it-jobs-meta/mongodb_config.yml
         mode: '0644'
 
-- name: Setup nginx
+
+# Python dependencies and the main Python app install
+- name: Install Python 3.10
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Add apt repository with Python 3.10
+      apt_repository:
+        repo: ppa:deadsnakes/ppa
+
+    - name: Install Python 3.10
+      apt:
+        name:
+          - python3.10
+          - python3.10-distutils
+        state: present
+
+- name: Install itjobsmeta Python application via pip
+  hosts: it-jobs-meta-server
+
+  vars_files:
+    # Contains itjobsmeta version as git commit/tag
+    - it_jobs_meta_vars.yml
+
+  tasks:
+    - name: Get pip for Python 3.10
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip for Python 3.10
+      command: python3.10 /tmp/get-pip.py
+
+    - name: Install it-jobs-meta package
+      pip:
+        name: git+https://github.com/maciejzj/it-jobs-meta.git@{{ it_jobs_meta_version }}
+        executable: /home/{{ ansible_user }}/.local/bin/pip3.10
+
+- name: Enable services with itjobsmeta apps
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars_files:
+    # Contains itjobsmeta apps run parameters
+    - it_jobs_meta_vars.yml
+
+  tasks:
+    - name: Copy systemd service files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      loop:
+        - src: "templates/it-jobs-meta-pipeline.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
+        - src: "templates/it-jobs-meta-dashboard.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Start itjobsmeta apps services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - it-jobs-meta-pipeline
+        - it-jobs-meta-dashboard
+
+
+# Server setup for public access
+- name: Setup Nginx as reverse proxy with https
   hosts: it-jobs-meta-server
   become: true
 
@@ -232,28 +261,28 @@
         var: domain
         verbosity: 1
 
-    - name: Copy Nginx configuration file
+    - name: Copy Nginx server and website configuration files
       template:
         src: "{{ item.src }}"
         dest: "{{ item.dest }}"
       loop:
-        # sprawezic lokalizacje ngin conf
-        # Zmienic nazwe default
+        # Site config
         - src: templates/itjobsmeta.net.j2
           dest: /etc/nginx/sites-available/{{ domain }}
+        # Main Nginx config
         - src: templates/nginx.conf.j2
           dest: /etc/nginx/nginx.conf
       notify:
-        - Reload Nginx
+        - Reload Nginx service
 
-    - name: Register certbot
+    - name: Register certbot identity
       shell: |
         certbot -n register --agree-tos --email {{ email }}
         touch /etc/letsencrypt/.registered
       args:
         creates: /etc/letsencrypt/.registered
 
-    - name: Get certificate
+    - name: Get certificate with certbot
       command: certbot -n certonly --nginx -d {{ domain }}
       args:
         creates: /etc/letsencrypt/live/{{ domain }}
@@ -267,18 +296,18 @@
         path: /etc/nginx/sites-enabled/default
         state: absent
       notify:
-        - Reload Nginx
+        - Reload Nginx service
 
-    - name: Create symlink to enable site
+    - name: Create symlink to enable itjobsmeta website
       file:
         src: /etc/nginx/sites-available/{{ domain }}
         dest: /etc/nginx/sites-enabled/{{ domain }}
         state: link
       notify:
-        - Reload Nginx
+        - Reload Nginx service
 
   handlers:
-    - name: Reload Nginx
+    - name: Reload Nginx service
       systemd:
         name: nginx
         state: reloaded
