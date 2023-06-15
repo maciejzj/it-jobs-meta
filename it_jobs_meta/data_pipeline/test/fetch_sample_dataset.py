@@ -6,7 +6,7 @@ from it_jobs_meta.data_pipeline.data_ingestion import (
 
 
 def main():
-    data_source = NoFluffJobsPostingsDataSource
+    data_source = NoFluffJobsPostingsDataSource()
     data = data_source.get()
     data_key = data.make_key_for_data()
     json_data_string = data.make_json_str_from_data()

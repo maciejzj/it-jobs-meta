@@ -18,9 +18,9 @@ class MockResponse:
 class TestNoFluffJobsPostingsDataSource:
     def test_returns_correct_metadata_source_name(self, mocker):
         mocker.patch('requests.get', return_value=MockResponse())
-        results = NoFluffJobsPostingsDataSource.get()
+        results = NoFluffJobsPostingsDataSource().get()
         source_name = results.metadata.source_name
-        assert source_name == NoFluffJobsPostingsDataSource.SOURCE_NAME
+        assert source_name == NoFluffJobsPostingsDataSource().SOURCE_NAME
 
     def test_returns_correct_metadata_datetime(self, mocker):
         expected = dt.datetime(2021, 12, 1, 8, 30, 5)
@@ -29,7 +29,7 @@ class TestNoFluffJobsPostingsDataSource:
 
         mocker.patch('requests.get', return_value=MockResponse())
 
-        results = NoFluffJobsPostingsDataSource.get()
+        results = NoFluffJobsPostingsDataSource().get()
         obtained_datetime = results.metadata.obtained_datetime
         assert obtained_datetime == expected
 
@@ -41,7 +41,7 @@ class TestNoFluffJobsPostingsDataSource:
 
         mocker.patch('requests.get', return_value=MockResponse())
 
-        data = NoFluffJobsPostingsDataSource.get()
+        data = NoFluffJobsPostingsDataSource().get()
         result = data.make_key_for_data()
         assert result == expected
 
@@ -50,7 +50,7 @@ class TestNoFluffJobsPostingsDataSource:
     ):
         mocker.patch('requests.get', return_value=MockResponse())
 
-        data = NoFluffJobsPostingsDataSource.get()
+        data = NoFluffJobsPostingsDataSource().get()
         result = data.make_json_str_from_data()
         result_back_to_json_dict = json.loads(result)
 
@@ -68,7 +68,7 @@ class TestNoFluffJobsPostingsDataSource:
 
         mocker.patch('requests.get', return_value=MockResponse())
 
-        data = NoFluffJobsPostingsDataSource.get()
+        data = NoFluffJobsPostingsDataSource().get()
         result = data.make_json_str_from_data()
         result_back_to_json_dict = json.loads(result)
         assert (
