@@ -125,11 +125,13 @@ data after the data is scrapped with the `pipeline` subcommand.
 
 ```
 $ it-jobs-meta -h
-usage: it-jobs-meta dashboard [-h] [-w] -m CONFIG_PATH
+usage: it-jobs-meta dashboard [-h] [-w] [-l LABEL] -m CONFIG_PATH
 
 options:
   -h, --help            show this help message and exit
   -w, --with-wsgi       run dashboard server with WSGI (in deployment mode)
+  -l LABEL, --label LABEL
+                        Extra label to be displayed at the top navbar
   -m CONFIG_PATH, --mongodb CONFIG_PATH
                         choose MongoDb as the data provider with the given config file
 ```
