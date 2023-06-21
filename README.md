@@ -164,10 +164,12 @@ Install docker, docker-compose, and run `docker-compose up` in the project
 directory to set up the services.
 
 The application can be run with `python -m it_jobs_meta`. Since running the data
-pipeline is going to download data from the web, it is not recommended to
-run it as a whole during the development. Some modules include demo versions of
-parts of the application, resort to using them and unit tests during the
-development process.
+pipeline is going to download data from the web, it is not recommended to run it
+as a whole during the development. The run-from-archive option can be used with
+the supplied data sample in the test directory
+(`./it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json`) to run the
+pipeline offline. Some modules include demo versions of parts of the
+application, resort to using them and unit tests during the development process.
 
 ### Development tools
 
@@ -186,8 +188,8 @@ Tools configuration is stored in the `pyproject.toml` file.
 
 The application is not bound to any specific deployment environment; however,
 AWS is used for running the main instance. The setup for creating AWS
-infrastructure for the application using Terraform is placed int the
-`deployment` directory. 
+infrastructure for the application using Terraform and Ansible deployment is
+placed int the `deployment` directory. 
 
 ## License
 
