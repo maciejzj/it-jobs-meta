@@ -195,6 +195,16 @@ class CliArgumentParser:
             help='run dashboard server with WSGI (in deployment mode)',
         )
 
+        parser_dashboard.add_argument(
+            '-l',
+            '--label',
+            metavar='LABEL',
+            action='store',
+            default=None,
+            type=str,
+            help='Extra label to be displayed at the top navbar',
+        )
+
         # Data provsion setup (from data warehouse)
         data_provider_arg_grp = parser_dashboard.add_mutually_exclusive_group(
             required=True

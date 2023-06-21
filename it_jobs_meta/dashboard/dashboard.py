@@ -17,18 +17,24 @@ from it_jobs_meta.dashboard.data_provision import (
     DashboardDataProviderFactory,
     DashboardProviderImpl,
 )
-from it_jobs_meta.dashboard.layout import DynamicContent, make_layout
+from it_jobs_meta.dashboard.layout import (
+    LayoutDynamicContent,
+    LayoutTemplateParameters,
+    make_layout,
+)
 
 
 class DashboardApp:
     def __init__(
         self,
         data_provider_factory: DashboardDataProviderFactory,
+        layout_template_parameters: LayoutTemplateParameters,
         cache_timeout=timedelta(hours=6),
     ):
         self._app: dash.Dash | None = None
         self._cache: AppCache | None = None
         self._data_provider_factory = data_provider_factory
+        self._layout_template_parameters = layout_template_parameters
         self._cache_timeout = cache_timeout
 
     @property
@@ -74,7 +80,7 @@ class DashboardApp:
 
         logging.info('Making layout')
         dynamic_content = self.make_dynamic_content(metadata_df, data_df)
-        layout = make_layout(dynamic_content)
+        layout = make_layout(self._layout_template_parameters, dynamic_content)
         logging.info('Making layout succeeded')
         logging.info('Rendering dashboard succeeded')
         return layout
@@ -103,10 +109,10 @@ class DashboardApp:
     @staticmethod
     def make_dynamic_content(
         metadata_df: pd.DataFrame, data_df: pd.DataFrame
-    ) -> DynamicContent:
+    ) -> LayoutDynamicContent:
         obtained_datetime = pd.to_datetime(metadata_df['obtained_datetime'][0])
         graphs = GraphRegistry.make(data_df)
-        return DynamicContent(
+        return LayoutDynamicContent(
             obtained_datetime=obtained_datetime, graphs=graphs
         )
 

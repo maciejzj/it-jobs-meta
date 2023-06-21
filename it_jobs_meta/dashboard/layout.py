@@ -11,12 +11,20 @@ from plotly import graph_objects as go
 from it_jobs_meta.dashboard.dashboard_components import Graph
 
 
+# Static parametrization
 @dataclass
-class DynamicContent:
+class LayoutTemplateParameters:
+    navbar_label: str | None = None
+
+
+# Dynamically generated components
+@dataclass
+class LayoutDynamicContent:
     obtained_datetime: datetime
     graphs: dict[Graph, go.Figure]
 
 
+# Mainly for long text
 @dataclass
 class DashboardTextualComponents:
     JUMBOTRON_TEXT_MD = '''
@@ -38,7 +46,12 @@ class DashboardTextualComponents:
     '''
 
 
-def make_navbar() -> DashComponent:
+def make_navbar(*, label: str | None = None) -> DashComponent:
+    brand = 'IT Jobs Meta'
+
+    if label is not None:
+        brand = brand + f' ｜ {label}'
+
     navbar = dbc.NavbarSimple(
         dbc.NavLink(
             dbc.Button(
@@ -48,7 +61,7 @@ def make_navbar() -> DashComponent:
             active=True,
             className='mr-0',
         ),
-        brand='IT Jobs Meta ｜ BETA',
+        brand=brand,
         className='bg-white',
     )
     return navbar
@@ -275,10 +288,13 @@ def make_footer() -> DashComponent:
     return footer
 
 
-def make_layout(dynamic_content: DynamicContent) -> DashComponent:
+def make_layout(
+    template_parameters: LayoutTemplateParameters,
+    dynamic_content: LayoutDynamicContent,
+) -> DashComponent:
     layout = html.Div(
         children=[
-            make_navbar(),
+            make_navbar(template_parameters.navbar_label),
             dbc.Container(
                 [
                     make_jumbotron(),

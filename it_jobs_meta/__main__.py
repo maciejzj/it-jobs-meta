@@ -5,6 +5,7 @@ from it_jobs_meta.common.utils import setup_logging
 from it_jobs_meta.dashboard.dashboard import (
     DashboardApp,
     DashboardDataProviderFactory,
+    LayoutTemplateParameters,
 )
 from it_jobs_meta.data_pipeline.data_etl import EtlLoaderFactory
 from it_jobs_meta.data_pipeline.data_ingestion import (
@@ -66,7 +67,10 @@ def main():
             etl_loader_factory = DashboardDataProviderFactory(
                 provider_type, provider_cfg_path
             )
-            app = DashboardApp(etl_loader_factory)
+            layout_parameters = LayoutTemplateParameters(
+                navbar_label=parser.args['label']
+            )
+            app = DashboardApp(etl_loader_factory, layout_parameters)
             app.run(parser.args['with_wsgi'])
 
 
