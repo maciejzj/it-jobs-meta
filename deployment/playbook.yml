@@ -207,6 +207,7 @@
     - name: Install it-jobs-meta package
       pip:
         name: git+https://github.com/maciejzj/it-jobs-meta.git@{{ it_jobs_meta_version }}
+        state: forcereinstall
         executable: /home/{{ ansible_user }}/.local/bin/pip3.10
 
 - name: Enable services with itjobsmeta apps
