@@ -64,7 +64,7 @@ def main():
     Gets the current postings from No Fluff Jobs and prints them as a json
     dict alongside the metadata.
     """
-    data = NoFluffJobsPostingsDataSource.get()
+    data = NoFluffJobsPostingsDataSource().get()
     print(data.make_json_str_from_data())
 
 

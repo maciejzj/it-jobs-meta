@@ -120,12 +120,15 @@ class DashboardApp:
 def main():
     """Run the demo dashboard with short cache timout (for development)."""
     setup_logging()
+    layout_params = LayoutTemplateParameters()
     data_warehouse_config_path = Path('config/mongodb_config.yml')
     data_provider_factory = DashboardDataProviderFactory(
         DashboardProviderImpl.MONGODB, data_warehouse_config_path
     )
     app = DashboardApp(
-        data_provider_factory, cache_timeout=timedelta(seconds=30)
+        layout_params,
+        data_provider_factory,
+        cache_timeout=timedelta(seconds=30),
     )
     app.run()
 
