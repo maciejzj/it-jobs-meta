@@ -48,7 +48,6 @@ class DashboardTextualComponents:
 
 def make_navbar(*, label: str | None = None) -> DashComponent:
     brand = 'IT Jobs Meta'
-
     if label is not None:
         brand = brand + f' ｜ {label}'
 
@@ -294,7 +293,7 @@ def make_layout(
 ) -> DashComponent:
     layout = html.Div(
         children=[
-            make_navbar(template_parameters.navbar_label),
+            make_navbar(label=template_parameters.navbar_label),
             dbc.Container(
                 [
                     make_jumbotron(),
