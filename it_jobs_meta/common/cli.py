@@ -50,7 +50,7 @@ class CliArgumentParser:
             self._args = vars(self._parser.parse_args())
         return self._args
 
-    def extract_data_lake(self) -> tuple[DataLakeImpl, Path]:
+    def extract_data_lake(self) -> tuple[DataLakeImpl, Path] | None:
         """Extract data lake setup from the arguments.
 
         :return: Tuple with the selected data lake implementation type and
@@ -61,6 +61,8 @@ class CliArgumentParser:
                 return DataLakeImpl.REDIS, self.args['redis']
             case {'s3_bucket': Path(), 'redis': None}:
                 return DataLakeImpl.S3BUCKET, self.args['s3_bucket']
+            case {'s3_bucket': None, 'redis': None}:
+                return None
             case _:
                 raise ValueError(
                     'Parsed arguments resulted in unsupported or invalid data'
@@ -121,6 +123,7 @@ class CliArgumentParser:
             'pipeline', description=self.PIPELINE_DESCRIPTION
         )
 
+        # Execution schedule
         parser_pipeline.add_argument(
             '-c',
             '--schedule',
@@ -129,9 +132,20 @@ class CliArgumentParser:
             type=str,
             help='schedule pipeline to run periodically with a cron expression',  # noqa: E501
         )
-        data_lake_arg_grp = parser_pipeline.add_mutually_exclusive_group(
-            required=True
+
+        # Data ingestion/source setup
+        parser_pipeline.add_argument(
+            '-a',
+            '--from-archive',
+            metavar='URL',
+            action='store',
+            default=None,
+            type=str,
+            help='Obtain postings data from archive (URL must point to JSON in data lake storage format)',  # noqa: E501
         )
+
+        # Data lake setup
+        data_lake_arg_grp = parser_pipeline.add_mutually_exclusive_group()
         data_lake_arg_grp.add_argument(
             '-r',
             '--redis',
@@ -149,6 +163,7 @@ class CliArgumentParser:
             help='choose S3 Bucket as the data lake with the given config file',  # noqa: E501
         )
 
+        # Data warehouse setup
         etl_loader_arg_grp = parser_pipeline.add_mutually_exclusive_group(
             required=True
         )
@@ -180,6 +195,17 @@ class CliArgumentParser:
             help='run dashboard server with WSGI (in deployment mode)',
         )
 
+        parser_dashboard.add_argument(
+            '-l',
+            '--label',
+            metavar='LABEL',
+            action='store',
+            default=None,
+            type=str,
+            help='Extra label to be displayed at the top navbar',
+        )
+
+        # Data provsion setup (from data warehouse)
         data_provider_arg_grp = parser_dashboard.add_mutually_exclusive_group(
             required=True
         )

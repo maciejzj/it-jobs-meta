@@ -1,0 +1,10 @@
+[Unit]
+Description=IT Jobs Meta dashboard server
+
+[Service]
+User={{ ansible_user }}
+ExecStart=/home/{{ ansible_user }}/.local/bin/it-jobs-meta -l /home/{{ ansible_user }}/it-jobs-meta/it_jobs_meta_dashboard.log dashboard {{ dashboard_command_params }}
+Restart=always
+
+[Install]
+WantedBy=multi-user.target

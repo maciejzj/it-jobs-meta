@@ -1,0 +1,314 @@
+---
+
+# Startup upgrades
+- name: Upgrade apt packages
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Upgrade apt packages
+      apt:
+        upgrade: yes
+
+
+# Rudimentary server setup
+# Read README for some remarks about the swap
+- name: Swap file setup
+  hosts: it-jobs-meta-server
+  become: true
+  vars:
+    swap_file_path: /swapfile
+    swap_file_size_mb: 1000
+
+  tasks:
+    - name: Create swap file
+      command: dd if=/dev/zero of={{ swap_file_path }} bs=1024 count={{ swap_file_size_mb }}k
+      args:
+        creates: "{{ swap_file_path }}"
+
+    - name: Change swap file permissions
+      file:
+        path: "{{ swap_file_path }}"
+        owner: root
+        group: root
+        mode: 0600
+
+    - name: "Check swap file type"
+      command: file "{{ swap_file_path }}"
+      register: swapfile
+
+    - name: Make swap file
+      command: "sudo mkswap {{ swap_file_path }}"
+      when: swapfile.stdout.find("swap file") == -1
+
+    - name: Write swap entry in fstab
+      mount:
+        name: none
+        src: "{{ swap_file_path }}"
+        fstype: swap
+        opts: sw
+        passno: 0
+        dump: 0
+        state: present
+
+    - name: Mount swap
+      command: "swapon {{ swap_file_path }}"
+      when: ansible_swaptotal_mb < 1
+
+
+- name: Create deployment directories and paths
+  hosts: it-jobs-meta-server
+
+  tasks:
+    # Config files and logs will be stored in this directory
+    - name: Create working directory for the deployment app
+      file:
+        path: /home/{{ ansible_user }}/it-jobs-meta
+        recurse: true
+        state: directory
+
+
+# Server oriented dependencies
+- name: Install Nginx server dependencies and docker for MongoDB database
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    # Installations
+    - name: Install docker
+      apt:
+        name:
+          - nginx
+          - docker.io
+        state: latest
+
+    - name: Install certbot
+      community.general.snap:
+        name: certbot
+        classic: yes
+
+    - name: Symlink certbot installation to main user binaries dir
+      file:
+        src: /snap/bin/certbot
+        dest: /usr/bin/certbot
+        state: link
+
+    # Docker setup
+    - name: Create docker group
+      group:
+        name: docker
+        state: present
+
+    - name: Add current user to the docker group
+      user:
+        name: "{{ ansible_user }}"
+        groups: docker
+        append: yes
+
+
+# Databases setup
+- name: Setup S3 data lake access config
+  hosts: it-jobs-meta-server
+  become: true
+
+  tasks:
+    - name: Copy s3 config
+      copy:
+        src: artifacts/s3_bucket_config.yml
+        dest: /home//{{ ansible_user }}/it-jobs-meta/s3_bucket_config.yml
+        mode: 0644
+
+
+- name: Setup MongoDB data warehouse access config
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars:
+    mongodb_username: it_jobs_meta_worker
+    mongodb_password: "{{ lookup('password', 'artifacts/mongodb_password chars=ascii_letters,digits,length=20') }}"
+    mongodb_database: it_jobs_meta_warehouse
+
+  tasks:
+    # MongoDB docker setup depends on system Python and pip
+    - name: Get pip for system Python
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip for system Python
+      command: python3 /tmp/get-pip.py
+
+    - name: install docker_image
+      pip:
+        name:
+          - docker
+        state: present
+
+    - name: Pull MongoDB Docker image
+      docker_image:
+        name: mongo
+        state: present
+        source: pull
+
+    - name: Run MongoDB Docker container
+      docker_container:
+        name: mongodb
+        image: mongo
+        env:
+          MONGO_INITDB_ROOT_USERNAME: "{{ mongodb_username }}"
+          MONGO_INITDB_ROOT_PASSWORD: "{{ mongodb_password }}"
+        published_ports:
+          - "27017:27017"
+        state: started
+        restart_policy: always
+        detach: true
+
+    - name: Create MongoDB config template
+      template:
+        src: templates/mongodb_config.yml.j2
+        dest: /home/{{ ansible_user }}/it-jobs-meta/mongodb_config.yml
+        mode: '0644'
+
+
+# Python dependencies and the main Python app install
+- name: Install Python 3.10
+  hosts: it-jobs-meta-server
+  become: true
+  tasks:
+    - name: Add apt repository with Python 3.10
+      apt_repository:
+        repo: ppa:deadsnakes/ppa
+
+    - name: Install Python 3.10
+      apt:
+        name:
+          - python3.10
+          - python3.10-distutils
+        state: present
+
+- name: Install itjobsmeta Python application via pip
+  hosts: it-jobs-meta-server
+
+  vars_files:
+    # Contains itjobsmeta version as git commit/tag
+    - it_jobs_meta_vars.yml
+
+  tasks:
+    - name: Get pip for Python 3.10
+      get_url:
+        url: https://bootstrap.pypa.io/get-pip.py
+        dest: /tmp/get-pip.py
+
+    - name: Install pip for Python 3.10
+      command: python3.10 /tmp/get-pip.py
+
+    - name: Install it-jobs-meta package
+      pip:
+        name: git+https://github.com/maciejzj/it-jobs-meta.git@{{ it_jobs_meta_version }}
+        state: forcereinstall
+        executable: /home/{{ ansible_user }}/.local/bin/pip3.10
+
+- name: Enable services with itjobsmeta apps
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars_files:
+    # Contains itjobsmeta apps run parameters
+    - it_jobs_meta_vars.yml
+
+  tasks:
+    - name: Copy systemd service files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        mode: 0644
+      loop:
+        - src: "templates/it-jobs-meta-pipeline.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-pipeline.service"
+        - src: "templates/it-jobs-meta-dashboard.service.j2"
+          dest: "/etc/systemd/system/it-jobs-meta-dashboard.service"
+
+    - name: Reload systemd daemon
+      systemd:
+        daemon_reload: yes
+
+    - name: Start itjobsmeta apps services
+      systemd:
+        name: "{{ item }}"
+        state: started
+        enabled: yes
+      loop:
+        - it-jobs-meta-pipeline
+        - it-jobs-meta-dashboard
+
+
+# Server setup for public access
+- name: Setup Nginx as reverse proxy with https
+  hosts: it-jobs-meta-server
+  become: true
+
+  vars:
+    # If workspace is "deployment", the domain is "itjobsmeta.net", if else the
+    # domain is <workspace>.itjobsmeta.net
+    domain: "{{ (workspace == 'deployment') | ternary('', workspace + '.') }}itjobsmeta.net"
+    ip_address: "{{ ansible_host }}"
+    email: maciejzjg@gmail.com
+
+  tasks:
+    - name: debug-domain
+      ansible.builtin.debug:
+        var: domain
+        verbosity: 1
+
+    - name: Copy Nginx server and website configuration files
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+      loop:
+        # Site config
+        - src: templates/itjobsmeta.net.j2
+          dest: /etc/nginx/sites-available/{{ domain }}
+        # Main Nginx config
+        - src: templates/nginx.conf.j2
+          dest: /etc/nginx/nginx.conf
+      notify:
+        - Reload Nginx service
+
+    - name: Register certbot identity
+      shell: |
+        certbot -n register --agree-tos --email {{ email }}
+        touch /etc/letsencrypt/.registered
+      args:
+        creates: /etc/letsencrypt/.registered
+
+    - name: Get certificate with certbot
+      command: certbot -n certonly --nginx -d {{ domain }}
+      args:
+        creates: /etc/letsencrypt/live/{{ domain }}
+      ignore_errors: true
+      tags:
+        - nginx
+        - certbot
+
+    - name: Disable default nginx website
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify:
+        - Reload Nginx service
+
+    - name: Create symlink to enable itjobsmeta website
+      file:
+        src: /etc/nginx/sites-available/{{ domain }}
+        dest: /etc/nginx/sites-enabled/{{ domain }}
+        state: link
+      notify:
+        - Reload Nginx service
+
+  handlers:
+    - name: Reload Nginx service
+      systemd:
+        name: nginx
+        state: reloaded
