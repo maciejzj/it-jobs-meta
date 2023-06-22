@@ -250,9 +250,9 @@
   become: true
 
   vars:
-    # If workspace is "deployment", the domain is "itjobsmeta.net", if else the
+    # If workspace is "default", the domain is "itjobsmeta.net", if else the
     # domain is <workspace>.itjobsmeta.net
-    domain: "{{ (workspace == 'deployment') | ternary('', workspace + '.') }}itjobsmeta.net"
+    domain: "{{ (workspace == 'default') | ternary('', workspace + '.') }}itjobsmeta.net"
     ip_address: "{{ ansible_host }}"
     email: maciejzjg@gmail.com
 
