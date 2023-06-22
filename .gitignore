@@ -1,5 +1,5 @@
-# Python
-*.json
+# Project-specific
+deployment/artifacts
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

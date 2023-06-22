@@ -1,7 +1,6 @@
 """Data Extraction, Transformations, and Loading for the job postings data."""
 
 import dataclasses
-import re
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 from pathlib import Path
@@ -147,7 +146,6 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
         (city_name, latitude, longitude). The results should be limited to the
         countries in COUNTRY_FILTERS.
         """
-        pass
 
     @abstractmethod
     def extract_contract_type(self, data: ProcessDataType) -> ProcessDataType:
@@ -156,12 +154,10 @@ class EtlTransformationEngine(Generic[ProcessDataType], ABC):
     @abstractmethod
     def extract_salaries(self, data: ProcessDataType) -> ProcessDataType:
         """Extract salaries to columns: "salary_max", "min", "salary_mean"."""
-        pass
 
     @abstractmethod
     def unify_missing_values(self, data: ProcessDataType) -> ProcessDataType:
         """Unify missing values (NaNs, empty, etc.) into Nones."""
-        pass
 
 
 class EtlLoadingEngine(Generic[ProcessDataType], ABC):
@@ -260,7 +256,7 @@ class PandasEtlExtractionFromJsonStr(EtlExtractionEngine[str, pd.DataFrame]):
             )
         except KeyError as error:
             raise ValueError(
-                'Data extractor got correct data format type and'
+                'Data extractor got correct date format type and '
                 'metadata, but "raw_data" was malformed'
             ) from error
 
@@ -316,6 +312,7 @@ class PandasEtlTransformationEngine(EtlTransformationEngine[pd.DataFrame]):
             lambda location_dict: [
                 self._geolocator(loc['city'])
                 for loc in location_dict['places']
+                if 'city' in loc
             ]
         )
         return data

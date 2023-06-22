@@ -14,9 +14,7 @@ from it_jobs_meta.data_pipeline.data_etl import (
     PandasEtlMongodbLoadingEngine,
     PandasEtlTransformationEngine,
 )
-from it_jobs_meta.data_pipeline.data_ingestion import (
-    NoFluffJobsPostingsDataSource,
-)
+from it_jobs_meta.data_pipeline.data_ingestion import PostingsDataSource
 from it_jobs_meta.data_pipeline.data_lake import DataLakeFactory
 
 
@@ -28,9 +26,12 @@ class DataPipeline:
 
     def __init__(
         self,
-        data_lake_factory: DataLakeFactory,
+        *,
+        data_source: PostingsDataSource,
+        data_lake_factory: DataLakeFactory | None,
         etl_loader_factory: EtlLoaderFactory,
     ):
+        self._data_source = data_source
         self._data_lake_factory = data_lake_factory
         self._etl_loader_factory = etl_loader_factory
 
@@ -56,18 +57,18 @@ class DataPipeline:
             logging.info('Started data pipeline')
 
             logging.info('Attempting to perform data ingestion step')
-            data = NoFluffJobsPostingsDataSource.get()
+            data = self._data_source.get()
             logging.info('Data ingestion succeeded')
-
-            logging.info('Attempting to archive raw data in data lake')
-            data_lake = self._data_lake_factory.make()
-
             data_key = data.make_key_for_data()
             data_as_json = data.make_json_str_from_data()
-            data_lake.set_data(data_key, data.make_json_str_from_data())
-            logging.info(
-                f'Data archival succeeded, stored under "{data_key}" key'
-            )
+
+            if self._data_lake_factory is not None:
+                logging.info('Attempting to archive raw data in data lake')
+                data_lake = self._data_lake_factory.make()
+                data_lake.set_data(data_key, data.make_json_str_from_data())
+                logging.info(
+                    f'Data archival succeeded, stored under "{data_key}" key'
+                )
 
             logging.info('Attempting to perform data warehousing step')
             etl_pipeline = EtlPipeline(

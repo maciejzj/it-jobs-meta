@@ -100,7 +100,7 @@ processed form (ready to be used by the dashboard later).
 
 ```
 $ it-jobs-meta -h
-usage: it-jobs-meta pipeline [-h] [-c CRON_EXPRESSION] (-r CONFIG_PATH | -b CONFIG_PATH) (-m CONFIG_PATH | -s CONFIG_PATH)
+usage: it-jobs-meta pipeline [-h] [-c CRON_EXPRESSION] [-a URL] [-r CONFIG_PATH | -b CONFIG_PATH] (-m CONFIG_PATH | -s CONFIG_PATH)
 
 Run data pipeline once or periodically, scrap data, store it in the data lake, load processed data to the data warehouse.
 
@@ -108,10 +108,12 @@ options:
   -h, --help            show this help message and exit
   -c CRON_EXPRESSION, --schedule CRON_EXPRESSION
                         schedule pipeline to run periodically with a cron expression
+  -a URL, --from-archive URL
+                        Obtain postings data from archive (URL must point to JSON in data lake storage format)
   -r CONFIG_PATH, --redis CONFIG_PATH
                         choose Redis as the data lake with the given config file
   -b CONFIG_PATH, --s3-bucket CONFIG_PATH
-                        choose S3 Bucket as the data lake with given config file
+                        choose S3 Bucket as the data lake with the given config file
   -m CONFIG_PATH, --mongodb CONFIG_PATH
                         choose MongoDB as the data warehouse with the given config file
   -s CONFIG_PATH, --sql CONFIG_PATH
@@ -123,11 +125,13 @@ data after the data is scrapped with the `pipeline` subcommand.
 
 ```
 $ it-jobs-meta -h
-usage: it-jobs-meta dashboard [-h] [-w] -m CONFIG_PATH
+usage: it-jobs-meta dashboard [-h] [-w] [-l LABEL] -m CONFIG_PATH
 
 options:
   -h, --help            show this help message and exit
   -w, --with-wsgi       run dashboard server with WSGI (in deployment mode)
+  -l LABEL, --label LABEL
+                        Extra label to be displayed at the top navbar
   -m CONFIG_PATH, --mongodb CONFIG_PATH
                         choose MongoDb as the data provider with the given config file
 ```
@@ -160,10 +164,12 @@ Install docker, docker-compose, and run `docker-compose up` in the project
 directory to set up the services.
 
 The application can be run with `python -m it_jobs_meta`. Since running the data
-pipeline is going to download data from the web, it is not recommended to
-run it as a whole during the development. Some modules include demo versions of
-parts of the application, resort to using them and unit tests during the
-development process.
+pipeline is going to download data from the web, it is not recommended to run it
+as a whole during the development. The run-from-archive option can be used with
+the supplied data sample in the test directory
+(`./it_jobs_meta/data_pipeline/test/1640874783_nofluffjobs.json`) to run the
+pipeline offline. Some modules include demo versions of parts of the
+application, resort to using them and unit tests during the development process.
 
 ### Development tools
 
@@ -182,8 +188,8 @@ Tools configuration is stored in the `pyproject.toml` file.
 
 The application is not bound to any specific deployment environment; however,
 AWS is used for running the main instance. The setup for creating AWS
-infrastructure for the application using Terraform is placed int the
-`deployment` directory. 
+infrastructure for the application using Terraform and Ansible deployment is
+placed int the `deployment` directory. 
 
 ## License
 

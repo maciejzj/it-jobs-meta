@@ -1,0 +1,19 @@
+server {
+    listen 443 ssl;
+
+    ssl_certificate /etc/letsencrypt/live/{{ domain }}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/{{ domain }}/privkey.pem;
+
+    server_name {{ domain }};
+
+ location / {
+            proxy_pass http://{{ ip_address }}:8080;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+}
+
+server {
+    listen 80;
+    server_name {{ domain }};
+    return 302 https://$server_name$request_uri;
+}
