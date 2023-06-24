@@ -141,7 +141,7 @@ class CliArgumentParser:
             action='store',
             default=None,
             type=str,
-            help='Obtain postings data from archive (URL must point to JSON in data lake storage format)',  # noqa: E501
+            help='obtain postings data from archive (URL must point to JSON in data lake storage format)',  # noqa: E501
         )
 
         # Data lake setup
@@ -202,7 +202,7 @@ class CliArgumentParser:
             action='store',
             default=None,
             type=str,
-            help='Extra label to be displayed at the top navbar',
+            help='extra label to be displayed at the top navbar',
         )
 
         # Data provsion setup (from data warehouse)
