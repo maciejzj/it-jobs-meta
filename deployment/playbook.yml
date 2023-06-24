@@ -237,7 +237,7 @@
     - name: Start itjobsmeta apps services
       systemd:
         name: "{{ item }}"
-        state: started
+        state: restarted
         enabled: yes
       loop:
         - it-jobs-meta-pipeline
