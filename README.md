@@ -109,7 +109,7 @@ options:
   -c CRON_EXPRESSION, --schedule CRON_EXPRESSION
                         schedule pipeline to run periodically with a cron expression
   -a URL, --from-archive URL
-                        Obtain postings data from archive (URL must point to JSON in data lake storage format)
+                        obtain postings data from archive (URL must point to JSON in data lake storage format)
   -r CONFIG_PATH, --redis CONFIG_PATH
                         choose Redis as the data lake with the given config file
   -b CONFIG_PATH, --s3-bucket CONFIG_PATH
@@ -131,7 +131,7 @@ options:
   -h, --help            show this help message and exit
   -w, --with-wsgi       run dashboard server with WSGI (in deployment mode)
   -l LABEL, --label LABEL
-                        Extra label to be displayed at the top navbar
+                        extra label to be displayed at the top navbar
   -m CONFIG_PATH, --mongodb CONFIG_PATH
                         choose MongoDb as the data provider with the given config file
 ```
