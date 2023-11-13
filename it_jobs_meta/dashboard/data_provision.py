@@ -29,7 +29,7 @@ class MongodbDashboardDataProvider(DashboardDataProvider):
         db_name: str,
         port=27017,
     ):
-        self._db_client = pymongo.MongoClient(
+        self._db_client: pymongo.MongoClient = pymongo.MongoClient(
             f'mongodb://{user_name}:{password}@{host}:{port}'
         )
         self._db = self._db_client[db_name]

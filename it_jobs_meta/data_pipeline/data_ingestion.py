@@ -40,7 +40,7 @@ class NoFluffJobsPostingsDataSource(PostingsDataSource):
         return data
 
 
-class ArchiveNoFluffJObsPostingsDataSource:
+class ArchiveNoFluffJObsPostingsDataSource(PostingsDataSource):
     """Load postings data from archive under URL (from data lake or file)"""
 
     def __init__(self, posting_url: str):
