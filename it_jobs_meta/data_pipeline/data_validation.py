@@ -36,10 +36,10 @@ class Schemas:
             'id': pa.Column(str),
             'city': pa.Column(str),
             'lat': pa.Column(
-                float, pa.Check.ge(-90), pa.Check.le(90), coerce=True
+                float, pa.Check.ge(-90), pa.Check.le(90), coerce=True  # type: ignore # noqa: e510
             ),
             'lon': pa.Column(
-                float, pa.Check.ge(-180), pa.Check.le(180), coerce=True
+                float, pa.Check.ge(-180), pa.Check.le(180), coerce=True  # type: ignore # noqa: e501
             ),
         }
     )

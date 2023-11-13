@@ -50,7 +50,7 @@ class CliArgumentParser:
             self._args = vars(self._parser.parse_args())
         return self._args
 
-    def extract_data_lake(self) -> tuple[DataLakeImpl, Path] | None:
+    def extract_data_lake(self) -> tuple[DataLakeImpl, Path]:
         """Extract data lake setup from the arguments.
 
         :return: Tuple with the selected data lake implementation type and
@@ -61,8 +61,6 @@ class CliArgumentParser:
                 return DataLakeImpl.REDIS, self.args['redis']
             case {'s3_bucket': Path(), 'redis': None}:
                 return DataLakeImpl.S3BUCKET, self.args['s3_bucket']
-            case {'s3_bucket': None, 'redis': None}:
-                return None
             case _:
                 raise ValueError(
                     'Parsed arguments resulted in unsupported or invalid data'

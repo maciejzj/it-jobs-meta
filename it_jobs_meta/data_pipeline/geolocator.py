@@ -1,12 +1,13 @@
 """Geolocation services."""
 
 import functools
+from typing import Sequence
 
 from geopy.geocoders import Nominatim
 
 
 class Geolocator:
-    def __init__(self, country_filter: tuple[str, ...] | None = None):
+    def __init__(self, country_filter: Sequence[str] | None = None):
         """Create geolocator instance.
 
         :param country_filter: Tuple of country names that the geolocation
